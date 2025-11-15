@@ -4,6 +4,7 @@ import { Menu, X, LogOut, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import logo from "@/assets/logo.jpeg";
 
 const Navigation = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -73,10 +74,8 @@ const Navigation = () => {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2">
-            <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-lg">LC</span>
-            </div>
+          <Link to="/" className="flex items-center space-x-3">
+            <img src={logo} alt="ListeningClub Logo" className="w-12 h-12 rounded-full object-cover" />
             <span className="font-heading font-bold text-xl">ListeningClub</span>
           </Link>
 
