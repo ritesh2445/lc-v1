@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { Instagram, Linkedin, Mail, Heart } from "lucide-react";
+import logo from "@/assets/logo.jpeg";
 
 const Footer = () => {
   return (
@@ -8,10 +9,8 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Brand */}
           <div className="space-y-4">
-            <div className="flex items-center space-x-2">
-              <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-lg">LC</span>
-              </div>
+            <div className="flex items-center space-x-3">
+              <img src={logo} alt="ListeningClub Logo" className="w-12 h-12 rounded-full object-cover" />
               <span className="font-heading font-bold text-xl">ListeningClub</span>
             </div>
             <p className="text-sm text-muted-foreground">
