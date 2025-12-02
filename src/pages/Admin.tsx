@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Lock, Calendar, MessageSquare, Quote, Save, Plus, Edit, Trash2, HelpCircle, Users, Phone, Bell, Image as ImageIcon, Upload } from "lucide-react";
+import { Lock, Calendar, MessageSquare, Quote, Save, Plus, Edit, Trash2, HelpCircle, Users, Phone, Bell, Image as ImageIcon, Upload, Video } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -35,8 +35,8 @@ const eventSchema = z.object({
 const testimonialSchema = z.object({
   name: z.string().min(1).max(100).trim(),
   role: z.string().min(1).max(100).trim(),
-  video_url: z.string().url().max(500).trim(),
-  thumbnail_url: z.string().url().max(500).trim().optional(),
+  video_url: z.string().max(500).trim().optional(),
+  thumbnail_url: z.string().max(500).trim().optional(),
 });
 
 const quoteSchema = z.object({
@@ -102,6 +102,8 @@ const Admin = () => {
   const [editingItem, setEditingItem] = useState<any>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [uploadingVideo, setUploadingVideo] = useState(false);
+  const [selectedVideoFile, setSelectedVideoFile] = useState<File | null>(null);
   
   const whatsappForm = useForm<WhatsAppFormValues>({
     resolver: zodResolver(whatsappSchema),
@@ -289,21 +291,79 @@ const Admin = () => {
     }
   };
 
+  const uploadVideo = async (file: File): Promise<string | null> => {
+    // Check file size (10MB max)
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    if (file.size > maxSize) {
+      toast({ title: "Error", description: "Video file must be less than 10MB", variant: "destructive" });
+      return null;
+    }
+
+    setUploadingVideo(true);
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+    const { data, error } = await supabase.storage
+      .from('testimonial-videos')
+      .upload(fileName, file);
+
+    setUploadingVideo(false);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+      return null;
+    }
+    
+    const { data: { publicUrl } } = supabase.storage.from('testimonial-videos').getPublicUrl(fileName);
+    return publicUrl;
+  };
+
   const onTestimonialSubmit = async (values: TestimonialFormValues) => {
     setIsLoading(true);
     try {
+      // Check limit of 12 testimonials (only when adding new)
+      if (!editingItem?.id && testimonials.length >= 12) {
+        toast({ title: "Error", description: "Maximum of 12 testimonials allowed", variant: "destructive" });
+        setIsLoading(false);
+        return;
+      }
+
+      let videoUrl = values.video_url || "";
+      
+      // Upload video file if selected
+      if (selectedVideoFile) {
+        const uploadedUrl = await uploadVideo(selectedVideoFile);
+        if (!uploadedUrl) {
+          setIsLoading(false);
+          return;
+        }
+        videoUrl = uploadedUrl;
+      }
+
+      if (!videoUrl) {
+        toast({ title: "Error", description: "Please provide a video URL or upload a video file", variant: "destructive" });
+        setIsLoading(false);
+        return;
+      }
+
+      const testimonialData = {
+        name: values.name,
+        role: values.role,
+        video_url: videoUrl,
+        thumbnail_url: values.thumbnail_url || null,
+      };
+
       if (editingItem?.id) {
-        const { error } = await supabase.from("testimonials").update(values as any).eq("id", editingItem.id);
+        const { error } = await supabase.from("testimonials").update(testimonialData).eq("id", editingItem.id);
         if (error) throw error;
         toast({ title: "Success", description: "Testimonial updated successfully" });
       } else {
-        const { error } = await supabase.from("testimonials").insert([values as any]);
+        const { error } = await supabase.from("testimonials").insert([testimonialData]);
         if (error) throw error;
         toast({ title: "Success", description: "Testimonial created successfully" });
       }
       fetchTestimonials();
       setDialogOpen(false);
       setEditingItem(null);
+      setSelectedVideoFile(null);
       testimonialForm.reset();
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -413,12 +473,20 @@ const Admin = () => {
     }
   };
 
-  const deleteTestimonial = async (id: string) => {
+  const deleteTestimonial = async (id: string, videoUrl?: string) => {
     if (!confirm("Are you sure you want to delete this testimonial?")) return;
+    
     const { error } = await supabase.from("testimonials").delete().eq("id", id);
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
+      // Delete video from storage if it's an uploaded video
+      if (videoUrl && videoUrl.includes('testimonial-videos')) {
+        const fileName = videoUrl.split('/').pop();
+        if (fileName) {
+          await supabase.storage.from('testimonial-videos').remove([fileName]);
+        }
+      }
       toast({ title: "Success", description: "Testimonial deleted successfully" });
       fetchTestimonials();
     }
@@ -763,55 +831,113 @@ const Admin = () => {
 
               {/* Testimonials Tab */}
               <TabsContent value="testimonials" className="space-y-4">
-                <Dialog open={dialogOpen && editingItem?.type === 'testimonial'} onOpenChange={(open) => { setDialogOpen(open); if (!open) { setEditingItem(null); testimonialForm.reset(); } }}>
-                  <DialogTrigger asChild>
-                    <Button onClick={() => { setEditingItem({ type: 'testimonial' }); setDialogOpen(true); }} className="mb-4">
-                      <Plus className="mr-2" size={18} />
-                      Add Testimonial
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>{editingItem?.id ? 'Edit' : 'Add'} Testimonial</DialogTitle>
-                      <DialogDescription>Fill in the testimonial details below</DialogDescription>
-                    </DialogHeader>
-                    <Form {...testimonialForm}>
-                      <form onSubmit={testimonialForm.handleSubmit(onTestimonialSubmit)} className="space-y-4">
-                        <FormField control={testimonialForm.control} name="name" render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Name</FormLabel>
-                            <FormControl><Input {...field} /></FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )} />
-                        <FormField control={testimonialForm.control} name="role" render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Role</FormLabel>
-                            <FormControl><Input {...field} /></FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )} />
-                        <FormField control={testimonialForm.control} name="video_url" render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Video URL</FormLabel>
-                            <FormControl><Input {...field} /></FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )} />
-                        <FormField control={testimonialForm.control} name="thumbnail_url" render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Thumbnail URL (optional)</FormLabel>
-                            <FormControl><Input {...field} /></FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )} />
-                        <Button type="submit" disabled={isLoading}>
-                          {isLoading ? "Saving..." : "Save Testimonial"}
-                        </Button>
-                      </form>
-                    </Form>
-                  </DialogContent>
-                </Dialog>
+                <div className="flex items-center justify-between mb-4">
+                  <p className="text-sm text-muted-foreground">
+                    {testimonials.length}/12 testimonials
+                  </p>
+                  <Dialog open={dialogOpen && editingItem?.type === 'testimonial'} onOpenChange={(open) => { setDialogOpen(open); if (!open) { setEditingItem(null); testimonialForm.reset(); setSelectedVideoFile(null); } }}>
+                    <DialogTrigger asChild>
+                      <Button 
+                        onClick={() => { setEditingItem({ type: 'testimonial' }); setDialogOpen(true); }} 
+                        disabled={testimonials.length >= 12}
+                      >
+                        <Plus className="mr-2" size={18} />
+                        Add Testimonial
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-md">
+                      <DialogHeader>
+                        <DialogTitle>{editingItem?.id ? 'Edit' : 'Add'} Testimonial</DialogTitle>
+                        <DialogDescription>Fill in the testimonial details below. Max video size: 10MB</DialogDescription>
+                      </DialogHeader>
+                      <Form {...testimonialForm}>
+                        <form onSubmit={testimonialForm.handleSubmit(onTestimonialSubmit)} className="space-y-4">
+                          <FormField control={testimonialForm.control} name="name" render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Name</FormLabel>
+                              <FormControl><Input {...field} /></FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )} />
+                          <FormField control={testimonialForm.control} name="role" render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Role</FormLabel>
+                              <FormControl><Input {...field} /></FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )} />
+                          
+                          {/* Video Upload Section */}
+                          <div className="space-y-3">
+                            <Label>Video</Label>
+                            <div className="border-2 border-dashed border-border rounded-lg p-4 text-center">
+                              <input
+                                type="file"
+                                accept="video/*"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) {
+                                    if (file.size > 10 * 1024 * 1024) {
+                                      toast({ title: "Error", description: "Video must be less than 10MB", variant: "destructive" });
+                                      e.target.value = "";
+                                      return;
+                                    }
+                                    setSelectedVideoFile(file);
+                                    testimonialForm.setValue("video_url", "");
+                                  }
+                                }}
+                                className="hidden"
+                                id="video-upload"
+                              />
+                              <label htmlFor="video-upload" className="cursor-pointer">
+                                <Upload className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
+                                <p className="text-sm text-muted-foreground">
+                                  {selectedVideoFile ? selectedVideoFile.name : "Click to upload video (max 10MB)"}
+                                </p>
+                              </label>
+                              {selectedVideoFile && (
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  className="mt-2"
+                                  onClick={() => setSelectedVideoFile(null)}
+                                >
+                                  Remove
+                                </Button>
+                              )}
+                            </div>
+                            <p className="text-xs text-muted-foreground text-center">Or provide a video URL below</p>
+                          </div>
+
+                          <FormField control={testimonialForm.control} name="video_url" render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Video URL (optional if uploading)</FormLabel>
+                              <FormControl>
+                                <Input 
+                                  {...field} 
+                                  placeholder="https://youtube.com/watch?v=..."
+                                  disabled={!!selectedVideoFile}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )} />
+                          <FormField control={testimonialForm.control} name="thumbnail_url" render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Thumbnail URL (optional)</FormLabel>
+                              <FormControl><Input {...field} placeholder="https://..." /></FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )} />
+                          <Button type="submit" disabled={isLoading || uploadingVideo} className="w-full">
+                            {uploadingVideo ? "Uploading video..." : isLoading ? "Saving..." : "Save Testimonial"}
+                          </Button>
+                        </form>
+                      </Form>
+                    </DialogContent>
+                  </Dialog>
+                </div>
 
                 <div className="grid gap-4">
                   {testimonials.map(testimonial => (
@@ -821,12 +947,18 @@ const Admin = () => {
                           <div>
                             <h3 className="font-bold text-lg">{testimonial.name}</h3>
                             <p className="text-sm text-muted-foreground">{testimonial.role}</p>
+                            <p className="text-xs text-muted-foreground mt-1 truncate max-w-xs">{testimonial.video_url}</p>
                           </div>
                           <div className="flex gap-2">
-                            <Button size="sm" variant="outline" onClick={() => { setEditingItem({ ...testimonial, type: 'testimonial' }); testimonialForm.reset(testimonial); setDialogOpen(true); }}>
+                            <Button size="sm" variant="outline" onClick={() => { 
+                              setEditingItem({ ...testimonial, type: 'testimonial' }); 
+                              testimonialForm.reset(testimonial); 
+                              setSelectedVideoFile(null);
+                              setDialogOpen(true); 
+                            }}>
                               <Edit size={16} />
                             </Button>
-                            <Button size="sm" variant="destructive" onClick={() => deleteTestimonial(testimonial.id)}>
+                            <Button size="sm" variant="destructive" onClick={() => deleteTestimonial(testimonial.id, testimonial.video_url)}>
                               <Trash2 size={16} />
                             </Button>
                           </div>
