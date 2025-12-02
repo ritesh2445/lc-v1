@@ -41,7 +41,7 @@ const MemoryLane = () => {
       <main className="flex-1 container mx-auto px-4 py-8 md:py-16">
         <section className="text-center mb-12 animate-fade-in-up">
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-display font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-primary via-secondary to-primary">
-            Memory Lane
+            Gallery
           </h1>
           <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto">
             A collection of beautiful moments and memories from our ListeningClub community
