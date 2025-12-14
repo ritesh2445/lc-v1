@@ -54,7 +54,7 @@ const volunteerSchema = z.object({
   name: z.string().min(1).max(100).trim(),
   role: z.string().min(1).max(100).trim(),
   quote: z.string().min(1).max(500).trim(),
-  image_url: z.string().url().max(500).trim(),
+  image_url: z.string().max(500).trim().optional(),
   display_order: z.number().int().min(0).default(0),
 });
 
@@ -103,7 +103,9 @@ const Admin = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadingVideo, setUploadingVideo] = useState(false);
+  const [uploadingVolunteerImage, setUploadingVolunteerImage] = useState(false);
   const [selectedVideoFile, setSelectedVideoFile] = useState<File | null>(null);
+  const [selectedVolunteerImageFile, setSelectedVolunteerImageFile] = useState<File | null>(null);
   
   const whatsappForm = useForm<WhatsAppFormValues>({
     resolver: zodResolver(whatsappSchema),
@@ -418,21 +420,73 @@ const Admin = () => {
     }
   };
 
+  const uploadVolunteerImage = async (file: File): Promise<string | null> => {
+    // Check file size (5MB max)
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      toast({ title: "Error", description: "Image file must be less than 5MB", variant: "destructive" });
+      return null;
+    }
+
+    setUploadingVolunteerImage(true);
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+    const { data, error } = await supabase.storage
+      .from('volunteer-images')
+      .upload(fileName, file);
+
+    setUploadingVolunteerImage(false);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+      return null;
+    }
+    
+    const { data: { publicUrl } } = supabase.storage.from('volunteer-images').getPublicUrl(fileName);
+    return publicUrl;
+  };
+
   const onVolunteerSubmit = async (values: VolunteerFormValues) => {
     setIsLoading(true);
     try {
+      let imageUrl = values.image_url || "";
+      
+      // Upload image file if selected
+      if (selectedVolunteerImageFile) {
+        const uploadedUrl = await uploadVolunteerImage(selectedVolunteerImageFile);
+        if (!uploadedUrl) {
+          setIsLoading(false);
+          return;
+        }
+        imageUrl = uploadedUrl;
+      }
+
+      if (!imageUrl) {
+        toast({ title: "Error", description: "Please provide an image URL or upload an image file", variant: "destructive" });
+        setIsLoading(false);
+        return;
+      }
+
+      const volunteerData = {
+        name: values.name,
+        role: values.role,
+        quote: values.quote,
+        image_url: imageUrl,
+        display_order: values.display_order,
+      };
+
       if (editingItem?.id) {
-        const { error } = await supabase.from("volunteers").update(values as any).eq("id", editingItem.id);
+        const { error } = await supabase.from("volunteers").update(volunteerData).eq("id", editingItem.id);
         if (error) throw error;
         toast({ title: "Success", description: "Volunteer updated successfully" });
       } else {
-        const { error } = await supabase.from("volunteers").insert([{ ...values, is_active: true } as any]);
+        const { error } = await supabase.from("volunteers").insert([{ ...volunteerData, is_active: true }]);
         if (error) throw error;
         toast({ title: "Success", description: "Volunteer created successfully" });
       }
       fetchVolunteers();
       setDialogOpen(false);
       setEditingItem(null);
+      setSelectedVolunteerImageFile(null);
       volunteerForm.reset();
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -514,12 +568,19 @@ const Admin = () => {
     }
   };
 
-  const deleteVolunteer = async (id: string) => {
+  const deleteVolunteer = async (id: string, imageUrl?: string) => {
     if (!confirm("Are you sure you want to delete this volunteer?")) return;
     const { error } = await supabase.from("volunteers").delete().eq("id", id);
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
+      // Delete image from storage if it's an uploaded image
+      if (imageUrl && imageUrl.includes('volunteer-images')) {
+        const fileName = imageUrl.split('/').pop();
+        if (fileName) {
+          await supabase.storage.from('volunteer-images').remove([fileName]);
+        }
+      }
       toast({ title: "Success", description: "Volunteer deleted successfully" });
       fetchVolunteers();
     }
@@ -1108,7 +1169,7 @@ const Admin = () => {
 
               {/* Volunteers Tab */}
               <TabsContent value="volunteers" className="space-y-4">
-                <Dialog open={dialogOpen && editingItem?.type === 'volunteer'} onOpenChange={(open) => { setDialogOpen(open); if (!open) { setEditingItem(null); volunteerForm.reset(); } }}>
+                <Dialog open={dialogOpen && editingItem?.type === 'volunteer'} onOpenChange={(open) => { setDialogOpen(open); if (!open) { setEditingItem(null); volunteerForm.reset(); setSelectedVolunteerImageFile(null); } }}>
                   <DialogTrigger asChild>
                     <Button onClick={() => { setEditingItem({ type: 'volunteer' }); setDialogOpen(true); }} className="mb-4">
                       <Plus className="mr-2" size={18} />
@@ -1118,7 +1179,7 @@ const Admin = () => {
                   <DialogContent className="max-w-2xl">
                     <DialogHeader>
                       <DialogTitle>{editingItem?.id ? 'Edit' : 'Add'} Volunteer</DialogTitle>
-                      <DialogDescription>Fill in the volunteer details below</DialogDescription>
+                      <DialogDescription>Fill in the volunteer details below. Max image size: 5MB</DialogDescription>
                     </DialogHeader>
                     <Form {...volunteerForm}>
                       <form onSubmit={volunteerForm.handleSubmit(onVolunteerSubmit)} className="space-y-4">
@@ -1143,10 +1204,51 @@ const Admin = () => {
                             <FormMessage />
                           </FormItem>
                         )} />
+                        {/* Image Upload Section */}
+                        <div className="space-y-3">
+                          <Label>Volunteer Image</Label>
+                          <div className="border-2 border-dashed border-border rounded-lg p-4 text-center">
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              id="volunteer-image-upload"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) setSelectedVolunteerImageFile(file);
+                              }}
+                            />
+                            <label htmlFor="volunteer-image-upload" className="cursor-pointer flex flex-col items-center gap-2">
+                              <Upload className="text-muted-foreground" size={24} />
+                              <span className="text-sm text-muted-foreground">
+                                {selectedVolunteerImageFile ? selectedVolunteerImageFile.name : "Click to upload image (max 5MB)"}
+                              </span>
+                            </label>
+                            {selectedVolunteerImageFile && (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="mt-2"
+                                onClick={() => setSelectedVolunteerImageFile(null)}
+                              >
+                                Remove
+                              </Button>
+                            )}
+                          </div>
+                          <p className="text-xs text-muted-foreground text-center">Or provide an image URL below</p>
+                        </div>
+
                         <FormField control={volunteerForm.control} name="image_url" render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Image URL</FormLabel>
-                            <FormControl><Input {...field} /></FormControl>
+                            <FormLabel>Image URL (optional if uploading)</FormLabel>
+                            <FormControl>
+                              <Input 
+                                {...field} 
+                                placeholder="https://..."
+                                disabled={!!selectedVolunteerImageFile}
+                              />
+                            </FormControl>
                             <FormMessage />
                           </FormItem>
                         )} />
@@ -1158,8 +1260,8 @@ const Admin = () => {
                             <FormMessage />
                           </FormItem>
                         )} />
-                        <Button type="submit" disabled={isLoading}>
-                          {isLoading ? "Saving..." : "Save Volunteer"}
+                        <Button type="submit" disabled={isLoading || uploadingVolunteerImage} className="w-full">
+                          {uploadingVolunteerImage ? "Uploading image..." : isLoading ? "Saving..." : "Save Volunteer"}
                         </Button>
                       </form>
                     </Form>
@@ -1181,11 +1283,12 @@ const Admin = () => {
                             <Button size="sm" variant="outline" onClick={() => { 
                               setEditingItem({ ...volunteer, type: 'volunteer' }); 
                               volunteerForm.reset(volunteer); 
+                              setSelectedVolunteerImageFile(null);
                               setDialogOpen(true); 
                             }}>
                               <Edit size={16} />
                             </Button>
-                            <Button size="sm" variant="destructive" onClick={() => deleteVolunteer(volunteer.id)}>
+                            <Button size="sm" variant="destructive" onClick={() => deleteVolunteer(volunteer.id, volunteer.image_url)}>
                               <Trash2 size={16} />
                             </Button>
                           </div>
