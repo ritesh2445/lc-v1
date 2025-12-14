@@ -20,9 +20,11 @@ interface FAQ {
 const FAQ = () => {
   const [faqs, setFaqs] = useState<FAQ[]>([]);
   const [loading, setLoading] = useState(true);
+  const [contactEmail, setContactEmail] = useState<string>("");
 
   useEffect(() => {
     fetchFAQs();
+    fetchContactEmail();
   }, []);
 
   const fetchFAQs = async () => {
@@ -40,6 +42,28 @@ const FAQ = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchContactEmail = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("contact_info")
+        .select("email")
+        .limit(1)
+        .single();
+
+      if (error) throw error;
+      if (data?.email) setContactEmail(data.email);
+    } catch (error) {
+      console.error("Error fetching contact email:", error);
+    }
+  };
+
+  const handleContactClick = () => {
+    const subject = encodeURIComponent("Inquiry about ListeningClub");
+    const body = encodeURIComponent("Hey Listening Club, I'd like to know more about .....");
+    const mailtoLink = `mailto:${contactEmail}?subject=${subject}&body=${body}`;
+    window.location.href = mailtoLink;
   };
 
   if (loading) {
@@ -101,11 +125,13 @@ const FAQ = () => {
               <p className="text-muted-foreground">
                 We're here to help! Reach out to our team and we'll get back to you as soon as possible.
               </p>
-              <a href="/contact">
-                <button className="px-8 py-3 bg-primary text-primary-foreground rounded-xl font-semibold hover:scale-105 transition-smooth shadow-soft">
-                  Contact Us
-                </button>
-              </a>
+              <button 
+                onClick={handleContactClick}
+                disabled={!contactEmail}
+                className="px-8 py-3 bg-primary text-primary-foreground rounded-xl font-semibold hover:scale-105 transition-smooth shadow-soft disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Contact Us
+              </button>
             </div>
           </div>
         </div>
