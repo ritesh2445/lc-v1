@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Lock, Calendar, MessageSquare, Quote, Save, Plus, Edit, Trash2, HelpCircle, Users, Phone, Bell, Image as ImageIcon, Upload, Video, UserCheck, Heart, Layers } from "lucide-react";
+import { Lock, Calendar, MessageSquare, Quote, Save, Plus, Edit, Trash2, HelpCircle, Phone, Image as ImageIcon, Upload, Video, Heart, Layers, Users, Briefcase } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -51,26 +51,12 @@ const faqSchema = z.object({
   display_order: z.number().int().min(0).default(0),
 });
 
-const volunteerSchema = z.object({
-  name: z.string().min(1).max(100).trim(),
-  role: z.string().min(1).max(100).trim(),
-  quote: z.string().min(1).max(500).trim(),
-  image_url: z.string().max(500).trim().optional(),
-  display_order: z.number().int().min(0).default(0),
-});
-
 const contactSchema = z.object({
-  email: z.string().email().max(255).trim().optional(),
+  email: z.string().email().max(255).trim().optional().or(z.literal('')),
   phone: z.string().max(50).trim().optional(),
   address: z.string().max(500).trim().optional(),
-  instagram_url: z.string().url().max(500).trim().optional(),
-  linkedin_url: z.string().url().max(500).trim().optional(),
-});
-
-const postSchema = z.object({
-  title: z.string().min(1).max(200).trim(),
-  content: z.string().min(1).max(2000).trim(),
-  type: z.enum(['news', 'notification', 'alert', 'event_cancellation']).default('news'),
+  instagram_url: z.string().max(500).trim().optional(),
+  linkedin_url: z.string().max(500).trim().optional(),
 });
 
 const gallerySchema = z.object({
@@ -83,7 +69,12 @@ const founderSchema = z.object({
   name: z.string().min(1).max(100).trim(),
   role: z.string().max(100).trim().optional(),
   bio: z.string().min(1).max(1000).trim(),
+  work: z.string().max(500).trim().optional(),
+  motto: z.string().max(500).trim().optional(),
   image_url: z.string().max(500).trim().optional(),
+  linkedin_url: z.string().max(500).trim().optional(),
+  instagram_url: z.string().max(500).trim().optional(),
+  twitter_url: z.string().max(500).trim().optional(),
   display_order: z.number().int().min(0).default(0),
 });
 
@@ -111,9 +102,7 @@ type EventFormValues = z.infer<typeof eventSchema>;
 type TestimonialFormValues = z.infer<typeof testimonialSchema>;
 type QuoteFormValues = z.infer<typeof quoteSchema>;
 type FAQFormValues = z.infer<typeof faqSchema>;
-type VolunteerFormValues = z.infer<typeof volunteerSchema>;
 type ContactFormValues = z.infer<typeof contactSchema>;
-type PostFormValues = z.infer<typeof postSchema>;
 type GalleryFormValues = z.infer<typeof gallerySchema>;
 type FounderFormValues = z.infer<typeof founderSchema>;
 type ServiceFormValues = z.infer<typeof serviceSchema>;
@@ -126,21 +115,20 @@ const Admin = () => {
   const [testimonials, setTestimonials] = useState<any[]>([]);
   const [quotes, setQuotes] = useState<any[]>([]);
   const [faqs, setFaqs] = useState<any[]>([]);
-  const [volunteers, setVolunteers] = useState<any[]>([]);
   const [contactInfo, setContactInfo] = useState<any>(null);
-  const [posts, setPosts] = useState<any[]>([]);
   const [galleryImages, setGalleryImages] = useState<any[]>([]);
+  const [founders, setFounders] = useState<any[]>([]);
   const [services, setServices] = useState<any[]>([]);
   const [bannerSlides, setBannerSlides] = useState<any[]>([]);
   const [editingItem, setEditingItem] = useState<any>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadingVideo, setUploadingVideo] = useState(false);
-  const [uploadingVolunteerImage, setUploadingVolunteerImage] = useState(false);
+  const [uploadingFounderImage, setUploadingFounderImage] = useState(false);
   const [uploadingServiceImage, setUploadingServiceImage] = useState(false);
   const [uploadingBannerImage, setUploadingBannerImage] = useState(false);
   const [selectedVideoFile, setSelectedVideoFile] = useState<File | null>(null);
-  const [selectedVolunteerImageFile, setSelectedVolunteerImageFile] = useState<File | null>(null);
+  const [selectedFounderImageFile, setSelectedFounderImageFile] = useState<File | null>(null);
   const [selectedServiceImageFile, setSelectedServiceImageFile] = useState<File | null>(null);
   const [selectedBannerImageFile, setSelectedBannerImageFile] = useState<File | null>(null);
   
@@ -190,17 +178,6 @@ const Admin = () => {
     },
   });
 
-  const volunteerForm = useForm<VolunteerFormValues>({
-    resolver: zodResolver(volunteerSchema),
-    defaultValues: {
-      name: "",
-      role: "",
-      quote: "",
-      image_url: "",
-      display_order: 0,
-    },
-  });
-
   const contactForm = useForm<ContactFormValues>({
     resolver: zodResolver(contactSchema),
     defaultValues: {
@@ -212,20 +189,27 @@ const Admin = () => {
     },
   });
 
-  const postForm = useForm<PostFormValues>({
-    resolver: zodResolver(postSchema),
-    defaultValues: {
-      title: "",
-      content: "",
-      type: "news",
-    },
-  });
-
   const galleryForm = useForm<GalleryFormValues>({
     resolver: zodResolver(gallerySchema),
     defaultValues: {
       image_url: "",
       caption: "",
+      display_order: 0,
+    },
+  });
+
+  const founderForm = useForm<FounderFormValues>({
+    resolver: zodResolver(founderSchema),
+    defaultValues: {
+      name: "",
+      role: "",
+      bio: "",
+      work: "",
+      motto: "",
+      image_url: "",
+      linkedin_url: "",
+      instagram_url: "",
+      twitter_url: "",
       display_order: 0,
     },
   });
@@ -261,8 +245,9 @@ const Admin = () => {
     fetchTestimonials();
     fetchQuotes();
     fetchFAQs();
-    fetchVolunteers();
     fetchContactInfo();
+    fetchGalleryImages();
+    fetchFounders();
     fetchServices();
     fetchBannerSlides();
   }, []);
@@ -296,17 +281,22 @@ const Admin = () => {
     if (data) setFaqs(data);
   };
 
-  const fetchVolunteers = async () => {
-    const { data } = await supabase.from("volunteers").select("*").order("display_order", { ascending: true });
-    if (data) setVolunteers(data);
-  };
-
   const fetchContactInfo = async () => {
     const { data } = await supabase.from("contact_info").select("*").maybeSingle();
     if (data) {
       setContactInfo(data);
       contactForm.reset(data);
     }
+  };
+
+  const fetchGalleryImages = async () => {
+    const { data } = await supabase.from("gallery_images").select("*").order("display_order", { ascending: true });
+    if (data) setGalleryImages(data);
+  };
+
+  const fetchFounders = async () => {
+    const { data } = await supabase.from("founders").select("*").order("display_order", { ascending: true });
+    if (data) setFounders(data);
   };
 
   const fetchServices = async () => {
@@ -370,8 +360,7 @@ const Admin = () => {
   };
 
   const uploadVideo = async (file: File): Promise<string | null> => {
-    // Check file size (10MB max)
-    const maxSize = 10 * 1024 * 1024; // 10MB
+    const maxSize = 10 * 1024 * 1024;
     if (file.size > maxSize) {
       toast({ title: "Error", description: "Video file must be less than 10MB", variant: "destructive" });
       return null;
@@ -380,7 +369,7 @@ const Admin = () => {
     setUploadingVideo(true);
     const fileExt = file.name.split('.').pop();
     const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-    const { data, error } = await supabase.storage
+    const { error } = await supabase.storage
       .from('testimonial-videos')
       .upload(fileName, file);
 
@@ -397,7 +386,6 @@ const Admin = () => {
   const onTestimonialSubmit = async (values: TestimonialFormValues) => {
     setIsLoading(true);
     try {
-      // Check limit of 12 testimonials (only when adding new)
       if (!editingItem?.id && testimonials.length >= 12) {
         toast({ title: "Error", description: "Maximum of 12 testimonials allowed", variant: "destructive" });
         setIsLoading(false);
@@ -406,7 +394,6 @@ const Admin = () => {
 
       let videoUrl = values.video_url || "";
       
-      // Upload video file if selected
       if (selectedVideoFile) {
         const uploadedUrl = await uploadVideo(selectedVideoFile);
         if (!uploadedUrl) {
@@ -496,81 +483,6 @@ const Admin = () => {
     }
   };
 
-  const uploadVolunteerImage = async (file: File): Promise<string | null> => {
-    // Check file size (5MB max)
-    const maxSize = 5 * 1024 * 1024; // 5MB
-    if (file.size > maxSize) {
-      toast({ title: "Error", description: "Image file must be less than 5MB", variant: "destructive" });
-      return null;
-    }
-
-    setUploadingVolunteerImage(true);
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-    const { data, error } = await supabase.storage
-      .from('volunteer-images')
-      .upload(fileName, file);
-
-    setUploadingVolunteerImage(false);
-    if (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-      return null;
-    }
-    
-    const { data: { publicUrl } } = supabase.storage.from('volunteer-images').getPublicUrl(fileName);
-    return publicUrl;
-  };
-
-  const onVolunteerSubmit = async (values: VolunteerFormValues) => {
-    setIsLoading(true);
-    try {
-      let imageUrl = values.image_url || "";
-      
-      // Upload image file if selected
-      if (selectedVolunteerImageFile) {
-        const uploadedUrl = await uploadVolunteerImage(selectedVolunteerImageFile);
-        if (!uploadedUrl) {
-          setIsLoading(false);
-          return;
-        }
-        imageUrl = uploadedUrl;
-      }
-
-      if (!imageUrl) {
-        toast({ title: "Error", description: "Please provide an image URL or upload an image file", variant: "destructive" });
-        setIsLoading(false);
-        return;
-      }
-
-      const volunteerData = {
-        name: values.name,
-        role: values.role,
-        quote: values.quote,
-        image_url: imageUrl,
-        display_order: values.display_order,
-      };
-
-      if (editingItem?.id) {
-        const { error } = await supabase.from("volunteers").update(volunteerData).eq("id", editingItem.id);
-        if (error) throw error;
-        toast({ title: "Success", description: "Volunteer updated successfully" });
-      } else {
-        const { error } = await supabase.from("volunteers").insert([{ ...volunteerData, is_active: true }]);
-        if (error) throw error;
-        toast({ title: "Success", description: "Volunteer created successfully" });
-      }
-      fetchVolunteers();
-      setDialogOpen(false);
-      setEditingItem(null);
-      setSelectedVolunteerImageFile(null);
-      volunteerForm.reset();
-    } catch (error: any) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const onContactSubmit = async (values: ContactFormValues) => {
     setIsLoading(true);
     try {
@@ -592,6 +504,268 @@ const Admin = () => {
     }
   };
 
+  const uploadImage = async (file: File) => {
+    setUploadingImage(true);
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Math.random()}.${fileExt}`;
+    const { error } = await supabase.storage
+      .from('memory-lane')
+      .upload(fileName, file);
+
+    setUploadingImage(false);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+      return null;
+    }
+    
+    const { data: { publicUrl } } = supabase.storage.from('memory-lane').getPublicUrl(fileName);
+    return publicUrl;
+  };
+
+  const onGallerySubmit = async (data: GalleryFormValues) => {
+    setIsLoading(true);
+    
+    if (!editingItem?.id && galleryImages.length >= 25) {
+      toast({ title: "Error", description: "Maximum of 25 images allowed", variant: "destructive" });
+      setIsLoading(false);
+      return;
+    }
+
+    const { error } = editingItem?.id
+      ? await supabase.from("gallery_images").update(data as any).eq("id", editingItem.id)
+      : await supabase.from("gallery_images").insert([data as any]);
+
+    setIsLoading(false);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Success", description: `Image ${editingItem?.id ? "updated" : "uploaded"} successfully` });
+      setDialogOpen(false);
+      setEditingItem(null);
+      galleryForm.reset();
+      fetchGalleryImages();
+    }
+  };
+
+  // Founder image upload
+  const uploadFounderImage = async (file: File): Promise<string | null> => {
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      toast({ title: "Error", description: "Image file must be less than 5MB", variant: "destructive" });
+      return null;
+    }
+
+    setUploadingFounderImage(true);
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+    const { error } = await supabase.storage
+      .from('founder-images')
+      .upload(fileName, file);
+
+    setUploadingFounderImage(false);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+      return null;
+    }
+    
+    const { data: { publicUrl } } = supabase.storage.from('founder-images').getPublicUrl(fileName);
+    return publicUrl;
+  };
+
+  const onFounderSubmit = async (values: FounderFormValues) => {
+    setIsLoading(true);
+    try {
+      let imageUrl = values.image_url || "";
+      
+      if (selectedFounderImageFile) {
+        const uploadedUrl = await uploadFounderImage(selectedFounderImageFile);
+        if (!uploadedUrl) {
+          setIsLoading(false);
+          return;
+        }
+        imageUrl = uploadedUrl;
+      }
+
+      if (!imageUrl) {
+        toast({ title: "Error", description: "Please provide an image URL or upload an image", variant: "destructive" });
+        setIsLoading(false);
+        return;
+      }
+
+      const founderData = {
+        name: values.name,
+        role: values.role || null,
+        bio: values.bio,
+        work: values.work || null,
+        motto: values.motto || null,
+        image_url: imageUrl,
+        linkedin_url: values.linkedin_url || null,
+        instagram_url: values.instagram_url || null,
+        twitter_url: values.twitter_url || null,
+        display_order: values.display_order,
+      };
+
+      if (editingItem?.id) {
+        const { error } = await supabase.from("founders").update(founderData).eq("id", editingItem.id);
+        if (error) throw error;
+        toast({ title: "Success", description: "Founder updated successfully" });
+      } else {
+        const { error } = await supabase.from("founders").insert([{ ...founderData, is_active: true }]);
+        if (error) throw error;
+        toast({ title: "Success", description: "Founder created successfully" });
+      }
+      fetchFounders();
+      setDialogOpen(false);
+      setEditingItem(null);
+      setSelectedFounderImageFile(null);
+      founderForm.reset();
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Service image upload
+  const uploadServiceImage = async (file: File): Promise<string | null> => {
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      toast({ title: "Error", description: "Image file must be less than 5MB", variant: "destructive" });
+      return null;
+    }
+
+    setUploadingServiceImage(true);
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+    const { error } = await supabase.storage
+      .from('service-images')
+      .upload(fileName, file);
+
+    setUploadingServiceImage(false);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+      return null;
+    }
+    
+    const { data: { publicUrl } } = supabase.storage.from('service-images').getPublicUrl(fileName);
+    return publicUrl;
+  };
+
+  const onServiceSubmit = async (values: ServiceFormValues) => {
+    setIsLoading(true);
+    try {
+      let imageUrl = values.banner_image_url || "";
+      
+      if (selectedServiceImageFile) {
+        const uploadedUrl = await uploadServiceImage(selectedServiceImageFile);
+        if (!uploadedUrl) {
+          setIsLoading(false);
+          return;
+        }
+        imageUrl = uploadedUrl;
+      }
+
+      const serviceData = {
+        name: values.name,
+        description: values.description,
+        banner_image_url: imageUrl || null,
+        whatsapp_message: values.whatsapp_message || null,
+        display_order: values.display_order,
+      };
+
+      if (editingItem?.id) {
+        const { error } = await supabase.from("services").update(serviceData).eq("id", editingItem.id);
+        if (error) throw error;
+        toast({ title: "Success", description: "Service updated successfully" });
+      } else {
+        const { error } = await supabase.from("services").insert([{ ...serviceData, is_active: true }]);
+        if (error) throw error;
+        toast({ title: "Success", description: "Service created successfully" });
+      }
+      fetchServices();
+      setDialogOpen(false);
+      setEditingItem(null);
+      setSelectedServiceImageFile(null);
+      serviceForm.reset();
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Banner image upload
+  const uploadBannerImage = async (file: File): Promise<string | null> => {
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      toast({ title: "Error", description: "Image file must be less than 5MB", variant: "destructive" });
+      return null;
+    }
+
+    setUploadingBannerImage(true);
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+    const { error } = await supabase.storage
+      .from('banner-images')
+      .upload(fileName, file);
+
+    setUploadingBannerImage(false);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+      return null;
+    }
+    
+    const { data: { publicUrl } } = supabase.storage.from('banner-images').getPublicUrl(fileName);
+    return publicUrl;
+  };
+
+  const onBannerSlideSubmit = async (values: BannerSlideFormValues) => {
+    setIsLoading(true);
+    try {
+      let imageUrl = values.image_url || "";
+      
+      if (selectedBannerImageFile) {
+        const uploadedUrl = await uploadBannerImage(selectedBannerImageFile);
+        if (!uploadedUrl) {
+          setIsLoading(false);
+          return;
+        }
+        imageUrl = uploadedUrl;
+      }
+
+      const bannerData = {
+        title: values.title,
+        subtitle: values.subtitle,
+        description: values.description,
+        image_url: imageUrl || null,
+        cta_text: values.cta_text,
+        cta_link: values.cta_link,
+        icon_type: values.icon_type,
+        display_order: values.display_order,
+      };
+
+      if (editingItem?.id) {
+        const { error } = await supabase.from("banner_slides").update(bannerData).eq("id", editingItem.id);
+        if (error) throw error;
+        toast({ title: "Success", description: "Banner slide updated successfully" });
+      } else {
+        const { error } = await supabase.from("banner_slides").insert([{ ...bannerData, is_active: true }]);
+        if (error) throw error;
+        toast({ title: "Success", description: "Banner slide created successfully" });
+      }
+      fetchBannerSlides();
+      setDialogOpen(false);
+      setEditingItem(null);
+      setSelectedBannerImageFile(null);
+      bannerSlideForm.reset();
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Delete functions
   const deleteEvent = async (id: string) => {
     if (!confirm("Are you sure you want to delete this event?")) return;
     const { error } = await supabase.from("events").delete().eq("id", id);
@@ -610,7 +784,6 @@ const Admin = () => {
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
-      // Delete video from storage if it's an uploaded video
       if (videoUrl && videoUrl.includes('testimonial-videos')) {
         const fileName = videoUrl.split('/').pop();
         if (fileName) {
@@ -644,120 +817,15 @@ const Admin = () => {
     }
   };
 
-  const deleteVolunteer = async (id: string, imageUrl?: string) => {
-    if (!confirm("Are you sure you want to delete this volunteer?")) return;
-    const { error } = await supabase.from("volunteers").delete().eq("id", id);
-    if (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    } else {
-      // Delete image from storage if it's an uploaded image
-      if (imageUrl && imageUrl.includes('volunteer-images')) {
-        const fileName = imageUrl.split('/').pop();
-        if (fileName) {
-          await supabase.storage.from('volunteer-images').remove([fileName]);
-        }
-      }
-      toast({ title: "Success", description: "Volunteer deleted successfully" });
-      fetchVolunteers();
-    }
-  };
-
-  // Posts functions
-  const fetchPosts = async () => {
-    const { data, error } = await supabase.from("posts").select("*").order("created_at", { ascending: false });
-    if (!error && data) setPosts(data);
-  };
-
-  const onPostSubmit = async (data: PostFormValues) => {
-    setIsLoading(true);
-    const { error } = editingItem?.id
-      ? await supabase.from("posts").update(data as any).eq("id", editingItem.id)
-      : await supabase.from("posts").insert([data as any]);
-
-    setIsLoading(false);
-    if (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    } else {
-      toast({ title: "Success", description: `Post ${editingItem?.id ? "updated" : "created"} successfully` });
-      setDialogOpen(false);
-      setEditingItem(null);
-      postForm.reset();
-      fetchPosts();
-    }
-  };
-
-  const deletePost = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this post?")) return;
-    const { error } = await supabase.from("posts").delete().eq("id", id);
-    if (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    } else {
-      toast({ title: "Success", description: "Post deleted successfully" });
-      fetchPosts();
-    }
-  };
-
-  // Gallery functions
-  const fetchGalleryImages = async () => {
-    const { data, error } = await supabase.from("gallery_images").select("*").order("display_order", { ascending: true });
-    if (!error && data) setGalleryImages(data);
-  };
-
-  const onGallerySubmit = async (data: GalleryFormValues) => {
-    setIsLoading(true);
-    
-    // Check limit of 25 images
-    if (!editingItem?.id && galleryImages.length >= 25) {
-      toast({ title: "Error", description: "Maximum of 25 images allowed", variant: "destructive" });
-      setIsLoading(false);
-      return;
-    }
-
-    const { error } = editingItem?.id
-      ? await supabase.from("gallery_images").update(data as any).eq("id", editingItem.id)
-      : await supabase.from("gallery_images").insert([data as any]);
-
-    setIsLoading(false);
-    if (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    } else {
-      toast({ title: "Success", description: `Image ${editingItem?.id ? "updated" : "uploaded"} successfully` });
-      setDialogOpen(false);
-      setEditingItem(null);
-      galleryForm.reset();
-      fetchGalleryImages();
-    }
-  };
-
-  const uploadImage = async (file: File) => {
-    setUploadingImage(true);
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${Math.random()}.${fileExt}`;
-    const { data, error } = await supabase.storage
-      .from('memory-lane')
-      .upload(fileName, file);
-
-    setUploadingImage(false);
-    if (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-      return null;
-    }
-    
-    const { data: { publicUrl } } = supabase.storage.from('memory-lane').getPublicUrl(fileName);
-    return publicUrl;
-  };
-
   const deleteGalleryImage = async (id: string, imageUrl: string) => {
     if (!confirm("Are you sure you want to delete this image?")) return;
     
-    // Delete from database
     const { error: dbError } = await supabase.from("gallery_images").delete().eq("id", id);
     if (dbError) {
       toast({ title: "Error", description: dbError.message, variant: "destructive" });
       return;
     }
 
-    // Delete from storage
     const fileName = imageUrl.split('/').pop();
     if (fileName) {
       await supabase.storage.from('memory-lane').remove([fileName]);
@@ -765,6 +833,57 @@ const Admin = () => {
 
     toast({ title: "Success", description: "Image deleted successfully" });
     fetchGalleryImages();
+  };
+
+  const deleteFounder = async (id: string, imageUrl?: string) => {
+    if (!confirm("Are you sure you want to delete this founder?")) return;
+    const { error } = await supabase.from("founders").delete().eq("id", id);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      if (imageUrl && imageUrl.includes('founder-images')) {
+        const fileName = imageUrl.split('/').pop();
+        if (fileName) {
+          await supabase.storage.from('founder-images').remove([fileName]);
+        }
+      }
+      toast({ title: "Success", description: "Founder deleted successfully" });
+      fetchFounders();
+    }
+  };
+
+  const deleteService = async (id: string, imageUrl?: string) => {
+    if (!confirm("Are you sure you want to delete this service?")) return;
+    const { error } = await supabase.from("services").delete().eq("id", id);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      if (imageUrl && imageUrl.includes('service-images')) {
+        const fileName = imageUrl.split('/').pop();
+        if (fileName) {
+          await supabase.storage.from('service-images').remove([fileName]);
+        }
+      }
+      toast({ title: "Success", description: "Service deleted successfully" });
+      fetchServices();
+    }
+  };
+
+  const deleteBannerSlide = async (id: string, imageUrl?: string) => {
+    if (!confirm("Are you sure you want to delete this banner slide?")) return;
+    const { error } = await supabase.from("banner_slides").delete().eq("id", id);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      if (imageUrl && imageUrl.includes('banner-images')) {
+        const fileName = imageUrl.split('/').pop();
+        if (fileName) {
+          await supabase.storage.from('banner-images').remove([fileName]);
+        }
+      }
+      toast({ title: "Success", description: "Banner slide deleted successfully" });
+      fetchBannerSlides();
+    }
   };
 
   return (
@@ -827,15 +946,16 @@ const Admin = () => {
 
             {/* Management Tabs */}
             <Tabs defaultValue="events" className="w-full">
-              <TabsList className="grid w-full grid-cols-4 lg:grid-cols-8">
+              <TabsList className="grid w-full grid-cols-5 lg:grid-cols-10">
                 <TabsTrigger value="events">Events</TabsTrigger>
                 <TabsTrigger value="testimonials">Testimonials</TabsTrigger>
                 <TabsTrigger value="quotes">Quotes</TabsTrigger>
                 <TabsTrigger value="faqs">FAQs</TabsTrigger>
-                <TabsTrigger value="volunteers">Volunteers</TabsTrigger>
                 <TabsTrigger value="contact">Contact</TabsTrigger>
-                <TabsTrigger value="posts">Updates</TabsTrigger>
                 <TabsTrigger value="gallery">Gallery</TabsTrigger>
+                <TabsTrigger value="founders">Founders</TabsTrigger>
+                <TabsTrigger value="services">Services</TabsTrigger>
+                <TabsTrigger value="banners">Banners</TabsTrigger>
               </TabsList>
 
               {/* Events Tab */}
@@ -884,6 +1004,14 @@ const Admin = () => {
                             <FormMessage />
                           </FormItem>
                         )} />
+                        <FormField control={eventForm.control} name="map_link" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Map/Directions Link (optional)</FormLabel>
+                            <FormControl><Input placeholder="https://maps.google.com/..." {...field} /></FormControl>
+                            <FormDescription>Google Maps or directions link</FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )} />
                         <FormField control={eventForm.control} name="description" render={({ field }) => (
                           <FormItem>
                             <FormLabel>Description</FormLabel>
@@ -923,34 +1051,16 @@ const Admin = () => {
                     <Card key={event.id}>
                       <CardContent className="p-6">
                         <div className="flex justify-between items-start">
-                          <div className="flex-1">
+                          <div>
                             <h3 className="font-bold text-lg">{event.name}</h3>
                             <p className="text-sm text-muted-foreground">{event.date} • {event.time}</p>
-                            <p className="text-sm text-muted-foreground">{event.location}</p>
-                            <p className="mt-2">{event.description}</p>
-                            <div className="mt-2 flex gap-2">
-                              <span className={`text-xs px-2 py-1 rounded ${event.is_booking_open ? 'bg-green-500/20 text-green-700' : 'bg-red-500/20 text-red-700'}`}>
-                                {event.is_booking_open ? 'Booking Open' : 'Booking Closed'}
-                              </span>
-                              {event.slots_status && (
-                                <span className="text-xs px-2 py-1 rounded bg-primary/20 text-primary">
-                                  {event.slots_status}
-                                </span>
-                              )}
-                            </div>
+                            <p className="text-sm">{event.location}</p>
+                            {event.map_link && <p className="text-xs text-primary mt-1">Has map link</p>}
                           </div>
                           <div className="flex gap-2">
                             <Button size="sm" variant="outline" onClick={() => { 
                               setEditingItem({ ...event, type: 'event' }); 
-                              eventForm.reset({
-                                name: event.name,
-                                date: event.date,
-                                time: event.time,
-                                description: event.description,
-                                location: event.location,
-                                is_booking_open: event.is_booking_open ?? true,
-                                slots_status: event.slots_status || "",
-                              }); 
+                              eventForm.reset(event); 
                               setDialogOpen(true); 
                             }}>
                               <Edit size={16} />
@@ -968,24 +1078,21 @@ const Admin = () => {
 
               {/* Testimonials Tab */}
               <TabsContent value="testimonials" className="space-y-4">
-                <div className="flex items-center justify-between mb-4">
-                  <p className="text-sm text-muted-foreground">
-                    {testimonials.length}/12 testimonials
-                  </p>
+                <div className="flex items-center gap-4 mb-4">
                   <Dialog open={dialogOpen && editingItem?.type === 'testimonial'} onOpenChange={(open) => { setDialogOpen(open); if (!open) { setEditingItem(null); testimonialForm.reset(); setSelectedVideoFile(null); } }}>
                     <DialogTrigger asChild>
                       <Button 
-                        onClick={() => { setEditingItem({ type: 'testimonial' }); setDialogOpen(true); }} 
+                        onClick={() => { setEditingItem({ type: 'testimonial' }); setDialogOpen(true); }}
                         disabled={testimonials.length >= 12}
                       >
                         <Plus className="mr-2" size={18} />
-                        Add Testimonial
+                        Add Testimonial ({testimonials.length}/12)
                       </Button>
                     </DialogTrigger>
-                    <DialogContent className="max-w-md">
+                    <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                       <DialogHeader>
                         <DialogTitle>{editingItem?.id ? 'Edit' : 'Add'} Testimonial</DialogTitle>
-                        <DialogDescription>Fill in the testimonial details below. Max video size: 10MB</DialogDescription>
+                        <DialogDescription>Add a video testimonial (max 10MB for uploads)</DialogDescription>
                       </DialogHeader>
                       <Form {...testimonialForm}>
                         <form onSubmit={testimonialForm.handleSubmit(onTestimonialSubmit)} className="space-y-4">
@@ -1004,7 +1111,6 @@ const Admin = () => {
                             </FormItem>
                           )} />
                           
-                          {/* Video Upload Section */}
                           <div className="space-y-3">
                             <Label>Video</Label>
                             <div className="border-2 border-dashed border-border rounded-lg p-4 text-center">
@@ -1033,13 +1139,7 @@ const Admin = () => {
                                 </p>
                               </label>
                               {selectedVideoFile && (
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="sm"
-                                  className="mt-2"
-                                  onClick={() => setSelectedVideoFile(null)}
-                                >
+                                <Button type="button" variant="ghost" size="sm" className="mt-2" onClick={() => setSelectedVideoFile(null)}>
                                   Remove
                                 </Button>
                               )}
@@ -1051,11 +1151,7 @@ const Admin = () => {
                             <FormItem>
                               <FormLabel>Video URL (optional if uploading)</FormLabel>
                               <FormControl>
-                                <Input 
-                                  {...field} 
-                                  placeholder="https://youtube.com/watch?v=..."
-                                  disabled={!!selectedVideoFile}
-                                />
+                                <Input {...field} placeholder="https://youtube.com/watch?v=..." disabled={!!selectedVideoFile} />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -1243,149 +1339,15 @@ const Admin = () => {
                 </div>
               </TabsContent>
 
-              {/* Volunteers Tab */}
-              <TabsContent value="volunteers" className="space-y-4">
-                <Dialog open={dialogOpen && editingItem?.type === 'volunteer'} onOpenChange={(open) => { setDialogOpen(open); if (!open) { setEditingItem(null); volunteerForm.reset(); setSelectedVolunteerImageFile(null); } }}>
-                  <DialogTrigger asChild>
-                    <Button onClick={() => { setEditingItem({ type: 'volunteer' }); setDialogOpen(true); }} className="mb-4">
-                      <Plus className="mr-2" size={18} />
-                      Add Volunteer
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-2xl">
-                    <DialogHeader>
-                      <DialogTitle>{editingItem?.id ? 'Edit' : 'Add'} Volunteer</DialogTitle>
-                      <DialogDescription>Fill in the volunteer details below. Max image size: 5MB</DialogDescription>
-                    </DialogHeader>
-                    <Form {...volunteerForm}>
-                      <form onSubmit={volunteerForm.handleSubmit(onVolunteerSubmit)} className="space-y-4">
-                        <FormField control={volunteerForm.control} name="name" render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Name</FormLabel>
-                            <FormControl><Input {...field} /></FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )} />
-                        <FormField control={volunteerForm.control} name="role" render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Role</FormLabel>
-                            <FormControl><Input {...field} /></FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )} />
-                        <FormField control={volunteerForm.control} name="quote" render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Quote</FormLabel>
-                            <FormControl><Textarea {...field} /></FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )} />
-                        {/* Image Upload Section */}
-                        <div className="space-y-3">
-                          <Label>Volunteer Image</Label>
-                          <div className="border-2 border-dashed border-border rounded-lg p-4 text-center">
-                            <input
-                              type="file"
-                              accept="image/*"
-                              className="hidden"
-                              id="volunteer-image-upload"
-                              onChange={(e) => {
-                                const file = e.target.files?.[0];
-                                if (file) setSelectedVolunteerImageFile(file);
-                              }}
-                            />
-                            <label htmlFor="volunteer-image-upload" className="cursor-pointer flex flex-col items-center gap-2">
-                              <Upload className="text-muted-foreground" size={24} />
-                              <span className="text-sm text-muted-foreground">
-                                {selectedVolunteerImageFile ? selectedVolunteerImageFile.name : "Click to upload image (max 5MB)"}
-                              </span>
-                            </label>
-                            {selectedVolunteerImageFile && (
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                className="mt-2"
-                                onClick={() => setSelectedVolunteerImageFile(null)}
-                              >
-                                Remove
-                              </Button>
-                            )}
-                          </div>
-                          <p className="text-xs text-muted-foreground text-center">Or provide an image URL below</p>
-                        </div>
-
-                        <FormField control={volunteerForm.control} name="image_url" render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Image URL (optional if uploading)</FormLabel>
-                            <FormControl>
-                              <Input 
-                                {...field} 
-                                placeholder="https://..."
-                                disabled={!!selectedVolunteerImageFile}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )} />
-                        <FormField control={volunteerForm.control} name="display_order" render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Display Order</FormLabel>
-                            <FormControl><Input type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value))} /></FormControl>
-                            <FormDescription>Lower numbers appear first</FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )} />
-                        <Button type="submit" disabled={isLoading || uploadingVolunteerImage} className="w-full">
-                          {uploadingVolunteerImage ? "Uploading image..." : isLoading ? "Saving..." : "Save Volunteer"}
-                        </Button>
-                      </form>
-                    </Form>
-                  </DialogContent>
-                </Dialog>
-
-                <div className="grid gap-4">
-                  {volunteers.map(volunteer => (
-                    <Card key={volunteer.id}>
-                      <CardContent className="p-6">
-                        <div className="flex justify-between items-start">
-                          <div className="flex-1">
-                            <h3 className="font-bold text-lg">{volunteer.name}</h3>
-                            <p className="text-sm text-muted-foreground">{volunteer.role}</p>
-                            <p className="mt-2 italic">"{volunteer.quote}"</p>
-                            <p className="text-xs text-muted-foreground mt-2">Order: {volunteer.display_order}</p>
-                          </div>
-                          <div className="flex gap-2">
-                            <Button size="sm" variant="outline" onClick={() => { 
-                              setEditingItem({ ...volunteer, type: 'volunteer' }); 
-                              volunteerForm.reset(volunteer); 
-                              setSelectedVolunteerImageFile(null);
-                              setDialogOpen(true); 
-                            }}>
-                              <Edit size={16} />
-                            </Button>
-                            <Button size="sm" variant="destructive" onClick={() => deleteVolunteer(volunteer.id, volunteer.image_url)}>
-                              <Trash2 size={16} />
-                            </Button>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </TabsContent>
-
               {/* Contact Tab */}
-              <TabsContent value="contact" className="space-y-4">
-                <Card className="shadow-soft border-border">
+              <TabsContent value="contact">
+                <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Phone className="text-primary" size={24} />
                       Contact Information
                     </CardTitle>
-                    <CardDescription>
-                      Update the contact details displayed on the website
-                    </CardDescription>
+                    <CardDescription>Update your organization's contact details</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <Form {...contactForm}>
@@ -1393,7 +1355,7 @@ const Admin = () => {
                         <FormField control={contactForm.control} name="email" render={({ field }) => (
                           <FormItem>
                             <FormLabel>Email</FormLabel>
-                            <FormControl><Input type="email" {...field} /></FormControl>
+                            <FormControl><Input {...field} /></FormControl>
                             <FormMessage />
                           </FormItem>
                         )} />
@@ -1431,94 +1393,6 @@ const Admin = () => {
                         </Button>
                       </form>
                     </Form>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              {/* Posts Tab */}
-              <TabsContent value="posts" className="space-y-4">
-                <Dialog open={dialogOpen && editingItem?.type === 'post'} onOpenChange={(open) => { setDialogOpen(open); if (!open) { setEditingItem(null); postForm.reset(); } }}>
-                  <DialogTrigger asChild>
-                    <Button onClick={() => { setEditingItem({ type: 'post' }); setDialogOpen(true); }} className="mb-4">
-                      <Plus className="mr-2" size={18} />
-                      Add Post
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                    <DialogHeader>
-                      <DialogTitle>{editingItem?.id ? 'Edit Post' : 'Add New Post'}</DialogTitle>
-                      <DialogDescription>Create updates, notifications, or alerts for users</DialogDescription>
-                    </DialogHeader>
-                    <Form {...postForm}>
-                      <form onSubmit={postForm.handleSubmit(onPostSubmit)} className="space-y-4">
-                        <FormField control={postForm.control} name="title" render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Title</FormLabel>
-                            <FormControl><Input {...field} /></FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )} />
-                        <FormField control={postForm.control} name="content" render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Content</FormLabel>
-                            <FormControl><Textarea {...field} rows={8} /></FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )} />
-                        <FormField control={postForm.control} name="type" render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Type</FormLabel>
-                            <FormControl>
-                              <select {...field} className="w-full rounded-md border border-input bg-background px-3 py-2">
-                                <option value="news">News</option>
-                                <option value="notification">Notification</option>
-                                <option value="alert">Alert</option>
-                                <option value="event_cancellation">Event Cancellation</option>
-                              </select>
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )} />
-                        <Button type="submit" disabled={isLoading}>
-                          {isLoading ? "Saving..." : editingItem?.id ? "Update Post" : "Create Post"}
-                        </Button>
-                      </form>
-                    </Form>
-                  </DialogContent>
-                </Dialog>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Bell className="text-primary" size={24} />
-                      All Posts
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {posts.map((post) => (
-                        <div key={post.id} className="flex items-start justify-between border-b pb-4">
-                          <div className="flex-1">
-                            <h3 className="font-semibold">{post.title}</h3>
-                            <p className="text-sm text-muted-foreground mt-1">{post.content.substring(0, 100)}...</p>
-                            <p className="text-xs text-muted-foreground mt-2">Type: {post.type}</p>
-                          </div>
-                          <div className="flex gap-2">
-                            <Button size="sm" variant="outline" onClick={() => {
-                              setEditingItem({ ...post, type: 'post' });
-                              postForm.reset(post);
-                              setDialogOpen(true);
-                            }}>
-                              <Edit size={16} />
-                            </Button>
-                            <Button size="sm" variant="destructive" onClick={() => deletePost(post.id)}>
-                              <Trash2 size={16} />
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
-                      {posts.length === 0 && <p className="text-muted-foreground">No posts yet</p>}
-                    </div>
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -1621,6 +1495,465 @@ const Admin = () => {
                     </div>
                   </CardContent>
                 </Card>
+              </TabsContent>
+
+              {/* Founders Tab */}
+              <TabsContent value="founders" className="space-y-4">
+                <Dialog open={dialogOpen && editingItem?.type === 'founder'} onOpenChange={(open) => { setDialogOpen(open); if (!open) { setEditingItem(null); founderForm.reset(); setSelectedFounderImageFile(null); } }}>
+                  <DialogTrigger asChild>
+                    <Button onClick={() => { setEditingItem({ type: 'founder' }); setDialogOpen(true); }} className="mb-4">
+                      <Plus className="mr-2" size={18} />
+                      Add Founder
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle>{editingItem?.id ? 'Edit' : 'Add'} Founder</DialogTitle>
+                      <DialogDescription>Fill in the founder details including social media links</DialogDescription>
+                    </DialogHeader>
+                    <Form {...founderForm}>
+                      <form onSubmit={founderForm.handleSubmit(onFounderSubmit)} className="space-y-4">
+                        <FormField control={founderForm.control} name="name" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Name</FormLabel>
+                            <FormControl><Input {...field} /></FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )} />
+                        <FormField control={founderForm.control} name="role" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Role/Title</FormLabel>
+                            <FormControl><Input placeholder="Co-Founder, CEO, etc." {...field} /></FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )} />
+                        <FormField control={founderForm.control} name="work" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Work/Profession</FormLabel>
+                            <FormControl><Input placeholder="Mental Health Advocate, Therapist, etc." {...field} /></FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )} />
+                        <FormField control={founderForm.control} name="motto" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Motto/Tagline</FormLabel>
+                            <FormControl><Input placeholder="Their personal motto or tagline" {...field} /></FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )} />
+                        <FormField control={founderForm.control} name="bio" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Bio/Description</FormLabel>
+                            <FormControl><Textarea rows={4} {...field} /></FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )} />
+
+                        {/* Image Upload */}
+                        <div className="space-y-3">
+                          <Label>Founder Image</Label>
+                          <div className="border-2 border-dashed border-border rounded-lg p-4 text-center">
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              id="founder-image-upload"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) setSelectedFounderImageFile(file);
+                              }}
+                            />
+                            <label htmlFor="founder-image-upload" className="cursor-pointer flex flex-col items-center gap-2">
+                              <Upload className="text-muted-foreground" size={24} />
+                              <span className="text-sm text-muted-foreground">
+                                {selectedFounderImageFile ? selectedFounderImageFile.name : "Click to upload image (max 5MB)"}
+                              </span>
+                            </label>
+                            {selectedFounderImageFile && (
+                              <Button type="button" variant="ghost" size="sm" className="mt-2" onClick={() => setSelectedFounderImageFile(null)}>
+                                Remove
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+
+                        <FormField control={founderForm.control} name="image_url" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Image URL (optional if uploading)</FormLabel>
+                            <FormControl><Input {...field} disabled={!!selectedFounderImageFile} /></FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )} />
+
+                        {/* Social Media Links */}
+                        <div className="border-t pt-4">
+                          <h4 className="font-medium mb-3">Social Media Links</h4>
+                          <div className="grid gap-4">
+                            <FormField control={founderForm.control} name="linkedin_url" render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>LinkedIn URL</FormLabel>
+                                <FormControl><Input placeholder="https://linkedin.com/in/..." {...field} /></FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )} />
+                            <FormField control={founderForm.control} name="instagram_url" render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Instagram URL</FormLabel>
+                                <FormControl><Input placeholder="https://instagram.com/..." {...field} /></FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )} />
+                            <FormField control={founderForm.control} name="twitter_url" render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Twitter/X URL</FormLabel>
+                                <FormControl><Input placeholder="https://twitter.com/..." {...field} /></FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )} />
+                          </div>
+                        </div>
+
+                        <FormField control={founderForm.control} name="display_order" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Display Order</FormLabel>
+                            <FormControl><Input type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value))} /></FormControl>
+                            <FormDescription>Lower numbers appear first</FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )} />
+
+                        <Button type="submit" disabled={isLoading || uploadingFounderImage} className="w-full">
+                          {uploadingFounderImage ? "Uploading..." : isLoading ? "Saving..." : "Save Founder"}
+                        </Button>
+                      </form>
+                    </Form>
+                  </DialogContent>
+                </Dialog>
+
+                <div className="grid gap-4">
+                  {founders.map(founder => (
+                    <Card key={founder.id}>
+                      <CardContent className="p-6">
+                        <div className="flex justify-between items-start gap-4">
+                          <div className="flex gap-4 items-start">
+                            {founder.image_url && (
+                              <img src={founder.image_url} alt={founder.name} className="w-16 h-16 rounded-full object-cover" />
+                            )}
+                            <div>
+                              <h3 className="font-bold text-lg">{founder.name}</h3>
+                              {founder.role && <p className="text-sm text-primary">{founder.role}</p>}
+                              {founder.work && <p className="text-sm text-muted-foreground">{founder.work}</p>}
+                              {founder.motto && <p className="text-sm italic mt-1">"{founder.motto}"</p>}
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button size="sm" variant="outline" onClick={() => { 
+                              setEditingItem({ ...founder, type: 'founder' }); 
+                              founderForm.reset(founder); 
+                              setSelectedFounderImageFile(null);
+                              setDialogOpen(true); 
+                            }}>
+                              <Edit size={16} />
+                            </Button>
+                            <Button size="sm" variant="destructive" onClick={() => deleteFounder(founder.id, founder.image_url)}>
+                              <Trash2 size={16} />
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                  {founders.length === 0 && <p className="text-muted-foreground">No founders added yet</p>}
+                </div>
+              </TabsContent>
+
+              {/* Services Tab */}
+              <TabsContent value="services" className="space-y-4">
+                <Dialog open={dialogOpen && editingItem?.type === 'service'} onOpenChange={(open) => { setDialogOpen(open); if (!open) { setEditingItem(null); serviceForm.reset(); setSelectedServiceImageFile(null); } }}>
+                  <DialogTrigger asChild>
+                    <Button onClick={() => { setEditingItem({ type: 'service' }); setDialogOpen(true); }} className="mb-4">
+                      <Plus className="mr-2" size={18} />
+                      Add Service
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle>{editingItem?.id ? 'Edit' : 'Add'} Service</DialogTitle>
+                      <DialogDescription>Fill in the service details</DialogDescription>
+                    </DialogHeader>
+                    <Form {...serviceForm}>
+                      <form onSubmit={serviceForm.handleSubmit(onServiceSubmit)} className="space-y-4">
+                        <FormField control={serviceForm.control} name="name" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Service Name</FormLabel>
+                            <FormControl><Input {...field} /></FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )} />
+                        <FormField control={serviceForm.control} name="description" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Description</FormLabel>
+                            <FormControl><Textarea rows={4} {...field} /></FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )} />
+
+                        {/* Banner Image Upload */}
+                        <div className="space-y-3">
+                          <Label>Banner Image</Label>
+                          <div className="border-2 border-dashed border-border rounded-lg p-4 text-center">
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              id="service-image-upload"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) setSelectedServiceImageFile(file);
+                              }}
+                            />
+                            <label htmlFor="service-image-upload" className="cursor-pointer flex flex-col items-center gap-2">
+                              <Upload className="text-muted-foreground" size={24} />
+                              <span className="text-sm text-muted-foreground">
+                                {selectedServiceImageFile ? selectedServiceImageFile.name : "Click to upload banner image (max 5MB)"}
+                              </span>
+                            </label>
+                            {selectedServiceImageFile && (
+                              <Button type="button" variant="ghost" size="sm" className="mt-2" onClick={() => setSelectedServiceImageFile(null)}>
+                                Remove
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+
+                        <FormField control={serviceForm.control} name="banner_image_url" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Banner Image URL (optional if uploading)</FormLabel>
+                            <FormControl><Input {...field} disabled={!!selectedServiceImageFile} /></FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )} />
+
+                        <FormField control={serviceForm.control} name="whatsapp_message" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>WhatsApp Pre-filled Message</FormLabel>
+                            <FormControl><Textarea placeholder="Hi, I'm interested in..." {...field} /></FormControl>
+                            <FormDescription>This message will be pre-filled when users click "Connect via WhatsApp"</FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )} />
+
+                        <FormField control={serviceForm.control} name="display_order" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Display Order</FormLabel>
+                            <FormControl><Input type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value))} /></FormControl>
+                            <FormDescription>Lower numbers appear first</FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )} />
+
+                        <Button type="submit" disabled={isLoading || uploadingServiceImage} className="w-full">
+                          {uploadingServiceImage ? "Uploading..." : isLoading ? "Saving..." : "Save Service"}
+                        </Button>
+                      </form>
+                    </Form>
+                  </DialogContent>
+                </Dialog>
+
+                <div className="grid gap-4">
+                  {services.map(service => (
+                    <Card key={service.id}>
+                      <CardContent className="p-6">
+                        <div className="flex justify-between items-start gap-4">
+                          <div className="flex gap-4 items-start">
+                            {service.banner_image_url && (
+                              <img src={service.banner_image_url} alt={service.name} className="w-24 h-16 rounded object-cover" />
+                            )}
+                            <div>
+                              <h3 className="font-bold text-lg">{service.name}</h3>
+                              <p className="text-sm text-muted-foreground line-clamp-2">{service.description}</p>
+                              <p className="text-xs text-muted-foreground mt-1">Order: {service.display_order}</p>
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button size="sm" variant="outline" onClick={() => { 
+                              setEditingItem({ ...service, type: 'service' }); 
+                              serviceForm.reset(service); 
+                              setSelectedServiceImageFile(null);
+                              setDialogOpen(true); 
+                            }}>
+                              <Edit size={16} />
+                            </Button>
+                            <Button size="sm" variant="destructive" onClick={() => deleteService(service.id, service.banner_image_url)}>
+                              <Trash2 size={16} />
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                  {services.length === 0 && <p className="text-muted-foreground">No services added yet</p>}
+                </div>
+              </TabsContent>
+
+              {/* Banners Tab */}
+              <TabsContent value="banners" className="space-y-4">
+                <Dialog open={dialogOpen && editingItem?.type === 'banner'} onOpenChange={(open) => { setDialogOpen(open); if (!open) { setEditingItem(null); bannerSlideForm.reset(); setSelectedBannerImageFile(null); } }}>
+                  <DialogTrigger asChild>
+                    <Button onClick={() => { setEditingItem({ type: 'banner' }); setDialogOpen(true); }} className="mb-4">
+                      <Plus className="mr-2" size={18} />
+                      Add Banner Slide
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle>{editingItem?.id ? 'Edit' : 'Add'} Banner Slide</DialogTitle>
+                      <DialogDescription>Configure the hero banner slide</DialogDescription>
+                    </DialogHeader>
+                    <Form {...bannerSlideForm}>
+                      <form onSubmit={bannerSlideForm.handleSubmit(onBannerSlideSubmit)} className="space-y-4">
+                        <FormField control={bannerSlideForm.control} name="title" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Title</FormLabel>
+                            <FormControl><Input {...field} /></FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )} />
+                        <FormField control={bannerSlideForm.control} name="subtitle" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Subtitle</FormLabel>
+                            <FormControl><Input {...field} /></FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )} />
+                        <FormField control={bannerSlideForm.control} name="description" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Description</FormLabel>
+                            <FormControl><Textarea rows={3} {...field} /></FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )} />
+
+                        {/* Banner Image Upload */}
+                        <div className="space-y-3">
+                          <Label>Background Image</Label>
+                          <div className="border-2 border-dashed border-border rounded-lg p-4 text-center">
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              id="banner-image-upload"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) setSelectedBannerImageFile(file);
+                              }}
+                            />
+                            <label htmlFor="banner-image-upload" className="cursor-pointer flex flex-col items-center gap-2">
+                              <Upload className="text-muted-foreground" size={24} />
+                              <span className="text-sm text-muted-foreground">
+                                {selectedBannerImageFile ? selectedBannerImageFile.name : "Click to upload background image (max 5MB)"}
+                              </span>
+                            </label>
+                            {selectedBannerImageFile && (
+                              <Button type="button" variant="ghost" size="sm" className="mt-2" onClick={() => setSelectedBannerImageFile(null)}>
+                                Remove
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+
+                        <FormField control={bannerSlideForm.control} name="image_url" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Image URL (optional if uploading)</FormLabel>
+                            <FormControl><Input {...field} disabled={!!selectedBannerImageFile} /></FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )} />
+
+                        <div className="grid grid-cols-2 gap-4">
+                          <FormField control={bannerSlideForm.control} name="cta_text" render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Button Text</FormLabel>
+                              <FormControl><Input {...field} /></FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )} />
+                          <FormField control={bannerSlideForm.control} name="cta_link" render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Button Link</FormLabel>
+                              <FormControl><Input placeholder="/services" {...field} /></FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )} />
+                        </div>
+
+                        <FormField control={bannerSlideForm.control} name="icon_type" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Icon Type</FormLabel>
+                            <FormControl>
+                              <select {...field} className="w-full rounded-md border border-input bg-background px-3 py-2">
+                                <option value="heart">Heart</option>
+                                <option value="users">Users</option>
+                                <option value="calendar">Calendar</option>
+                                <option value="star">Star</option>
+                              </select>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )} />
+
+                        <FormField control={bannerSlideForm.control} name="display_order" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Display Order</FormLabel>
+                            <FormControl><Input type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value))} /></FormControl>
+                            <FormDescription>Lower numbers appear first</FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )} />
+
+                        <Button type="submit" disabled={isLoading || uploadingBannerImage} className="w-full">
+                          {uploadingBannerImage ? "Uploading..." : isLoading ? "Saving..." : "Save Banner Slide"}
+                        </Button>
+                      </form>
+                    </Form>
+                  </DialogContent>
+                </Dialog>
+
+                <div className="grid gap-4">
+                  {bannerSlides.map(slide => (
+                    <Card key={slide.id}>
+                      <CardContent className="p-6">
+                        <div className="flex justify-between items-start gap-4">
+                          <div className="flex gap-4 items-start">
+                            {slide.image_url && (
+                              <img src={slide.image_url} alt={slide.title} className="w-32 h-20 rounded object-cover" />
+                            )}
+                            <div>
+                              <h3 className="font-bold text-lg">{slide.title}</h3>
+                              <p className="text-sm text-primary">{slide.subtitle}</p>
+                              <p className="text-sm text-muted-foreground line-clamp-1">{slide.description}</p>
+                              <p className="text-xs text-muted-foreground mt-1">CTA: {slide.cta_text} → {slide.cta_link}</p>
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button size="sm" variant="outline" onClick={() => { 
+                              setEditingItem({ ...slide, type: 'banner' }); 
+                              bannerSlideForm.reset(slide); 
+                              setSelectedBannerImageFile(null);
+                              setDialogOpen(true); 
+                            }}>
+                              <Edit size={16} />
+                            </Button>
+                            <Button size="sm" variant="destructive" onClick={() => deleteBannerSlide(slide.id, slide.image_url)}>
+                              <Trash2 size={16} />
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                  {bannerSlides.length === 0 && <p className="text-muted-foreground">No banner slides added yet</p>}
+                </div>
               </TabsContent>
             </Tabs>
           </div>
