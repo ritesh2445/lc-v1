@@ -2,14 +2,19 @@ import { useState, useEffect } from "react";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { supabase } from "@/integrations/supabase/client";
-import { User } from "lucide-react";
+import { User, Linkedin, Instagram, Twitter } from "lucide-react";
 
 interface Founder {
   id: string;
   name: string;
   role: string | null;
   bio: string;
+  work: string | null;
+  motto: string | null;
   image_url: string;
+  linkedin_url: string | null;
+  instagram_url: string | null;
+  twitter_url: string | null;
   display_order: number;
 }
 
@@ -71,7 +76,7 @@ const Founders = () => {
               <p className="text-muted-foreground text-lg">Founder information coming soon.</p>
             </div>
           ) : (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
               {founders.map((founder, index) => (
                 <div
                   key={founder.id}
@@ -85,16 +90,64 @@ const Founders = () => {
                       className="w-full h-full object-cover group-hover:scale-105 transition-smooth"
                     />
                   </div>
-                  <div className="p-6 space-y-3">
-                    <h3 className="text-2xl font-bold group-hover:text-primary transition-smooth">
-                      {founder.name}
-                    </h3>
-                    {founder.role && (
-                      <p className="text-primary font-medium">{founder.role}</p>
+                  <div className="p-6 space-y-4">
+                    <div>
+                      <h3 className="text-2xl font-bold group-hover:text-primary transition-smooth">
+                        {founder.name}
+                      </h3>
+                      {founder.role && (
+                        <p className="text-primary font-medium">{founder.role}</p>
+                      )}
+                      {founder.work && (
+                        <p className="text-sm text-muted-foreground">{founder.work}</p>
+                      )}
+                    </div>
+
+                    {founder.motto && (
+                      <blockquote className="border-l-4 border-primary pl-4 italic text-muted-foreground">
+                        "{founder.motto}"
+                      </blockquote>
                     )}
+
                     <p className="text-muted-foreground leading-relaxed">
                       {founder.bio}
                     </p>
+
+                    {/* Social Media Links */}
+                    {(founder.linkedin_url || founder.instagram_url || founder.twitter_url) && (
+                      <div className="flex gap-3 pt-2">
+                        {founder.linkedin_url && (
+                          <a
+                            href={founder.linkedin_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-2 rounded-full bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground transition-smooth"
+                          >
+                            <Linkedin size={20} />
+                          </a>
+                        )}
+                        {founder.instagram_url && (
+                          <a
+                            href={founder.instagram_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-2 rounded-full bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground transition-smooth"
+                          >
+                            <Instagram size={20} />
+                          </a>
+                        )}
+                        {founder.twitter_url && (
+                          <a
+                            href={founder.twitter_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-2 rounded-full bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground transition-smooth"
+                          >
+                            <Twitter size={20} />
+                          </a>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}

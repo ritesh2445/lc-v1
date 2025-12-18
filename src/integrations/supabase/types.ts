@@ -171,10 +171,15 @@ export type Database = {
           display_order: number | null
           id: string
           image_url: string
+          instagram_url: string | null
           is_active: boolean | null
+          linkedin_url: string | null
+          motto: string | null
           name: string
           role: string | null
+          twitter_url: string | null
           updated_at: string | null
+          work: string | null
         }
         Insert: {
           bio: string
@@ -182,10 +187,15 @@ export type Database = {
           display_order?: number | null
           id?: string
           image_url: string
+          instagram_url?: string | null
           is_active?: boolean | null
+          linkedin_url?: string | null
+          motto?: string | null
           name: string
           role?: string | null
+          twitter_url?: string | null
           updated_at?: string | null
+          work?: string | null
         }
         Update: {
           bio?: string
@@ -193,10 +203,15 @@ export type Database = {
           display_order?: number | null
           id?: string
           image_url?: string
+          instagram_url?: string | null
           is_active?: boolean | null
+          linkedin_url?: string | null
+          motto?: string | null
           name?: string
           role?: string | null
+          twitter_url?: string | null
           updated_at?: string | null
+          work?: string | null
         }
         Relationships: []
       }
