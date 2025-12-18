@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Lock, Calendar, MessageSquare, Quote, Save, Plus, Edit, Trash2, HelpCircle, Users, Phone, Bell, Image as ImageIcon, Upload, Video, UserCheck } from "lucide-react";
+import { Lock, Calendar, MessageSquare, Quote, Save, Plus, Edit, Trash2, HelpCircle, Users, Phone, Bell, Image as ImageIcon, Upload, Video, UserCheck, Heart, Layers } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -30,6 +30,7 @@ const eventSchema = z.object({
   location: z.string().min(1).max(200).trim(),
   is_booking_open: z.boolean().default(true),
   slots_status: z.string().max(200).trim().optional(),
+  map_link: z.string().max(500).trim().optional(),
 });
 
 const testimonialSchema = z.object({
@@ -86,6 +87,25 @@ const founderSchema = z.object({
   display_order: z.number().int().min(0).default(0),
 });
 
+const serviceSchema = z.object({
+  name: z.string().min(1).max(200).trim(),
+  description: z.string().min(1).max(1000).trim(),
+  banner_image_url: z.string().max(500).trim().optional(),
+  whatsapp_message: z.string().max(500).trim().optional(),
+  display_order: z.number().int().min(0).default(0),
+});
+
+const bannerSlideSchema = z.object({
+  title: z.string().min(1).max(200).trim(),
+  subtitle: z.string().min(1).max(200).trim(),
+  description: z.string().min(1).max(500).trim(),
+  image_url: z.string().max(500).trim().optional(),
+  cta_text: z.string().min(1).max(100).trim(),
+  cta_link: z.string().min(1).max(200).trim(),
+  icon_type: z.string().min(1).max(50).trim(),
+  display_order: z.number().int().min(0).default(0),
+});
+
 type WhatsAppFormValues = z.infer<typeof whatsappSchema>;
 type EventFormValues = z.infer<typeof eventSchema>;
 type TestimonialFormValues = z.infer<typeof testimonialSchema>;
@@ -96,6 +116,8 @@ type ContactFormValues = z.infer<typeof contactSchema>;
 type PostFormValues = z.infer<typeof postSchema>;
 type GalleryFormValues = z.infer<typeof gallerySchema>;
 type FounderFormValues = z.infer<typeof founderSchema>;
+type ServiceFormValues = z.infer<typeof serviceSchema>;
+type BannerSlideFormValues = z.infer<typeof bannerSlideSchema>;
 
 const Admin = () => {
   const { toast } = useToast();
@@ -108,13 +130,19 @@ const Admin = () => {
   const [contactInfo, setContactInfo] = useState<any>(null);
   const [posts, setPosts] = useState<any[]>([]);
   const [galleryImages, setGalleryImages] = useState<any[]>([]);
+  const [services, setServices] = useState<any[]>([]);
+  const [bannerSlides, setBannerSlides] = useState<any[]>([]);
   const [editingItem, setEditingItem] = useState<any>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadingVideo, setUploadingVideo] = useState(false);
   const [uploadingVolunteerImage, setUploadingVolunteerImage] = useState(false);
+  const [uploadingServiceImage, setUploadingServiceImage] = useState(false);
+  const [uploadingBannerImage, setUploadingBannerImage] = useState(false);
   const [selectedVideoFile, setSelectedVideoFile] = useState<File | null>(null);
   const [selectedVolunteerImageFile, setSelectedVolunteerImageFile] = useState<File | null>(null);
+  const [selectedServiceImageFile, setSelectedServiceImageFile] = useState<File | null>(null);
+  const [selectedBannerImageFile, setSelectedBannerImageFile] = useState<File | null>(null);
   
   const whatsappForm = useForm<WhatsAppFormValues>({
     resolver: zodResolver(whatsappSchema),
@@ -131,6 +159,7 @@ const Admin = () => {
       location: "",
       is_booking_open: true,
       slots_status: "",
+      map_link: "",
     },
   });
 
@@ -201,6 +230,31 @@ const Admin = () => {
     },
   });
 
+  const serviceForm = useForm<ServiceFormValues>({
+    resolver: zodResolver(serviceSchema),
+    defaultValues: {
+      name: "",
+      description: "",
+      banner_image_url: "",
+      whatsapp_message: "",
+      display_order: 0,
+    },
+  });
+
+  const bannerSlideForm = useForm<BannerSlideFormValues>({
+    resolver: zodResolver(bannerSlideSchema),
+    defaultValues: {
+      title: "",
+      subtitle: "",
+      description: "",
+      image_url: "",
+      cta_text: "Learn More",
+      cta_link: "/services",
+      icon_type: "heart",
+      display_order: 0,
+    },
+  });
+
   useEffect(() => {
     fetchWhatsAppContact();
     fetchEvents();
@@ -209,6 +263,8 @@ const Admin = () => {
     fetchFAQs();
     fetchVolunteers();
     fetchContactInfo();
+    fetchServices();
+    fetchBannerSlides();
   }, []);
 
   const fetchWhatsAppContact = async () => {
@@ -253,6 +309,16 @@ const Admin = () => {
     }
   };
 
+  const fetchServices = async () => {
+    const { data } = await supabase.from("services").select("*").order("display_order", { ascending: true });
+    if (data) setServices(data);
+  };
+
+  const fetchBannerSlides = async () => {
+    const { data } = await supabase.from("banner_slides").select("*").order("display_order", { ascending: true });
+    if (data) setBannerSlides(data);
+  };
+
   const onWhatsAppSubmit = async (values: WhatsAppFormValues) => {
     setIsLoading(true);
     try {
@@ -280,6 +346,7 @@ const Admin = () => {
         location: values.location,
         is_booking_open: values.is_booking_open,
         slots_status: values.slots_status || null,
+        map_link: values.map_link || null,
       };
       
       if (editingItem?.id) {

@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      banner_slides: {
+        Row: {
+          created_at: string | null
+          cta_link: string
+          cta_text: string
+          description: string
+          display_order: number | null
+          icon_type: string
+          id: string
+          image_url: string | null
+          is_active: boolean | null
+          subtitle: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          cta_link?: string
+          cta_text?: string
+          description: string
+          display_order?: number | null
+          icon_type?: string
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          subtitle: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          cta_link?: string
+          cta_text?: string
+          description?: string
+          display_order?: number | null
+          icon_type?: string
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          subtitle?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       contact_info: {
         Row: {
           address: string | null
@@ -53,6 +98,7 @@ export type Database = {
           id: string
           is_booking_open: boolean | null
           location: string
+          map_link: string | null
           name: string
           slots_status: string | null
           time: string
@@ -66,6 +112,7 @@ export type Database = {
           id?: string
           is_booking_open?: boolean | null
           location: string
+          map_link?: string | null
           name: string
           slots_status?: string | null
           time: string
@@ -79,6 +126,7 @@ export type Database = {
           id?: string
           is_booking_open?: boolean | null
           location?: string
+          map_link?: string | null
           name?: string
           slots_status?: string | null
           time?: string
@@ -266,6 +314,42 @@ export type Database = {
           is_active?: boolean | null
           text?: string
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      services: {
+        Row: {
+          banner_image_url: string | null
+          created_at: string | null
+          description: string
+          display_order: number | null
+          id: string
+          is_active: boolean | null
+          name: string
+          updated_at: string | null
+          whatsapp_message: string | null
+        }
+        Insert: {
+          banner_image_url?: string | null
+          created_at?: string | null
+          description: string
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          updated_at?: string | null
+          whatsapp_message?: string | null
+        }
+        Update: {
+          banner_image_url?: string | null
+          created_at?: string | null
+          description?: string
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          updated_at?: string | null
+          whatsapp_message?: string | null
         }
         Relationships: []
       }

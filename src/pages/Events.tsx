@@ -1,4 +1,4 @@
-import { Calendar, Clock, MapPin, MessageCircle } from "lucide-react";
+import { Calendar, Clock, MapPin, MessageCircle, Navigation as NavIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
@@ -15,6 +15,7 @@ interface Event {
   location: string;
   is_booking_open: boolean;
   slots_status: string | null;
+  map_link: string | null;
 }
 
 const Events = () => {
@@ -64,6 +65,7 @@ const Events = () => {
           location: event.location,
           is_booking_open: event.is_booking_open ?? true,
           slots_status: event.slots_status,
+          map_link: event.map_link,
         })));
       }
     } catch (error) {
@@ -77,6 +79,10 @@ const Events = () => {
     const message = `Hi! I'd like to book the event: ${event.name} on ${event.date} at ${event.time}`;
     const whatsappUrl = `https://wa.me/${whatsappContact}?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, "_blank");
+  };
+
+  const handleOpenMap = (mapLink: string) => {
+    window.open(mapLink, "_blank");
   };
 
   if (loading) {
@@ -139,6 +145,17 @@ const Events = () => {
                     <div className="flex items-center gap-2">
                       <MapPin size={16} className="text-primary" />
                       <span>{event.location}</span>
+                      {event.map_link && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 px-2 text-primary hover:text-primary/80"
+                          onClick={() => handleOpenMap(event.map_link!)}
+                        >
+                          <NavIcon size={14} className="mr-1" />
+                          Directions
+                        </Button>
+                      )}
                     </div>
                   </div>
                   
