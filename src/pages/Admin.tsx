@@ -95,6 +95,7 @@ const bannerSlideSchema = z.object({
   cta_link: z.string().min(1).max(200).trim(),
   icon_type: z.string().min(1).max(50).trim(),
   display_order: z.number().int().min(0).default(0),
+  is_active: z.boolean().default(true),
 });
 
 type WhatsAppFormValues = z.infer<typeof whatsappSchema>;
@@ -236,6 +237,7 @@ const Admin = () => {
       cta_link: "/services",
       icon_type: "heart",
       display_order: 0,
+      is_active: true,
     },
   });
 
@@ -742,6 +744,7 @@ const Admin = () => {
         cta_link: values.cta_link,
         icon_type: values.icon_type,
         display_order: values.display_order,
+        is_active: values.is_active,
       };
 
       if (editingItem?.id) {
@@ -882,6 +885,16 @@ const Admin = () => {
         }
       }
       toast({ title: "Success", description: "Banner slide deleted successfully" });
+      fetchBannerSlides();
+    }
+  };
+
+  const toggleBannerActive = async (id: string, currentStatus: boolean) => {
+    const { error } = await supabase.from("banner_slides").update({ is_active: !currentStatus }).eq("id", id);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Success", description: `Banner ${!currentStatus ? 'activated' : 'deactivated'}` });
       fetchBannerSlides();
     }
   };
@@ -1911,6 +1924,18 @@ const Admin = () => {
                           </FormItem>
                         )} />
 
+                        <FormField control={bannerSlideForm.control} name="is_active" render={({ field }) => (
+                          <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                            <FormControl>
+                              <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                            </FormControl>
+                            <div className="space-y-1 leading-none">
+                              <FormLabel>Active</FormLabel>
+                              <FormDescription>Show this banner on the home page</FormDescription>
+                            </div>
+                          </FormItem>
+                        )} />
+
                         <Button type="submit" disabled={isLoading || uploadingBannerImage} className="w-full">
                           {uploadingBannerImage ? "Uploading..." : isLoading ? "Saving..." : "Save Banner Slide"}
                         </Button>
@@ -1929,13 +1954,25 @@ const Admin = () => {
                               <img src={slide.image_url} alt={slide.title} className="w-32 h-20 rounded object-cover" />
                             )}
                             <div>
-                              <h3 className="font-bold text-lg">{slide.title}</h3>
+                              <div className="flex items-center gap-2">
+                                <h3 className="font-bold text-lg">{slide.title}</h3>
+                                <span className={`text-xs px-2 py-0.5 rounded ${slide.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                                  {slide.is_active ? 'Active' : 'Inactive'}
+                                </span>
+                              </div>
                               <p className="text-sm text-primary">{slide.subtitle}</p>
                               <p className="text-sm text-muted-foreground line-clamp-1">{slide.description}</p>
                               <p className="text-xs text-muted-foreground mt-1">CTA: {slide.cta_text} → {slide.cta_link}</p>
                             </div>
                           </div>
-                          <div className="flex gap-2">
+                          <div className="flex gap-2 items-center">
+                            <Button 
+                              size="sm" 
+                              variant={slide.is_active ? "secondary" : "default"}
+                              onClick={() => toggleBannerActive(slide.id, slide.is_active)}
+                            >
+                              {slide.is_active ? 'Deactivate' : 'Activate'}
+                            </Button>
                             <Button size="sm" variant="outline" onClick={() => { 
                               setEditingItem({ ...slide, type: 'banner' }); 
                               bannerSlideForm.reset(slide); 
