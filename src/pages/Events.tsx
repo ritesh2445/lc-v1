@@ -56,7 +56,35 @@ const Events = () => {
       if (error) throw error;
       
       if (data) {
-        setEvents(data.map(event => ({
+        // Filter out expired events (24 hours after event date/time)
+        const now = new Date();
+        const filteredEvents = data.filter(event => {
+          // Parse the event date and time
+          const eventDate = new Date(event.date);
+          
+          // Parse time (e.g., "10:00 AM", "14:30", etc.)
+          const timeStr = event.time || "00:00";
+          const timeParts = timeStr.match(/(\d{1,2}):?(\d{2})?\s*(AM|PM)?/i);
+          
+          if (timeParts) {
+            let hours = parseInt(timeParts[1], 10);
+            const minutes = parseInt(timeParts[2] || "0", 10);
+            const meridiem = timeParts[3]?.toUpperCase();
+            
+            if (meridiem === "PM" && hours !== 12) hours += 12;
+            if (meridiem === "AM" && hours === 12) hours = 0;
+            
+            eventDate.setHours(hours, minutes, 0, 0);
+          }
+          
+          // Add 24 hours to the event date/time
+          const expiryDate = new Date(eventDate.getTime() + 24 * 60 * 60 * 1000);
+          
+          // Only show events that haven't expired
+          return now < expiryDate;
+        });
+
+        setEvents(filteredEvents.map(event => ({
           id: event.id,
           name: event.name,
           date: event.date,

@@ -119,6 +119,7 @@ const Admin = () => {
   const [contactInfo, setContactInfo] = useState<any>(null);
   const [galleryImages, setGalleryImages] = useState<any[]>([]);
   const [founders, setFounders] = useState<any[]>([]);
+  const [foundersFooterText, setFoundersFooterText] = useState<string>("");
   const [services, setServices] = useState<any[]>([]);
   const [bannerSlides, setBannerSlides] = useState<any[]>([]);
   const [editingItem, setEditingItem] = useState<any>(null);
@@ -250,6 +251,7 @@ const Admin = () => {
     fetchContactInfo();
     fetchGalleryImages();
     fetchFounders();
+    fetchFoundersFooterText();
     fetchServices();
     fetchBannerSlides();
   }, []);
@@ -299,6 +301,31 @@ const Admin = () => {
   const fetchFounders = async () => {
     const { data } = await supabase.from("founders").select("*").order("display_order", { ascending: true });
     if (data) setFounders(data);
+  };
+
+  const fetchFoundersFooterText = async () => {
+    const { data } = await supabase
+      .from("settings")
+      .select("value")
+      .eq("key", "founders_footer_text")
+      .maybeSingle();
+    if (data) setFoundersFooterText(data.value);
+  };
+
+  const saveFoundersFooterText = async () => {
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.from("settings").upsert({
+        key: "founders_footer_text",
+        value: foundersFooterText.trim(),
+      }, { onConflict: "key" });
+      if (error) throw error;
+      toast({ title: "Success", description: "Founders footer text updated successfully" });
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const fetchServices = async () => {
@@ -1678,6 +1705,31 @@ const Admin = () => {
                   ))}
                   {founders.length === 0 && <p className="text-muted-foreground">No founders added yet</p>}
                 </div>
+
+                {/* Founders Footer Text */}
+                <Card className="shadow-soft border-border mt-6">
+                  <CardHeader>
+                    <CardTitle className="text-lg">Founders Page Footer Text</CardTitle>
+                    <CardDescription>
+                      This 2-line text block appears below the founders section on the Founders page.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <Textarea
+                        placeholder="Enter 2-line text to display below founders (e.g., mission statement, vision, etc.)"
+                        rows={3}
+                        value={foundersFooterText}
+                        onChange={(e) => setFoundersFooterText(e.target.value)}
+                        className="resize-none"
+                      />
+                      <Button onClick={saveFoundersFooterText} disabled={isLoading} className="shadow-soft">
+                        <Save className="mr-2" size={18} />
+                        {isLoading ? "Saving..." : "Save Footer Text"}
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
               </TabsContent>
 
               {/* Services Tab */}

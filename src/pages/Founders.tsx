@@ -21,9 +21,11 @@ interface Founder {
 const Founders = () => {
   const [founders, setFounders] = useState<Founder[]>([]);
   const [loading, setLoading] = useState(true);
+  const [footerText, setFooterText] = useState<string>("");
 
   useEffect(() => {
     fetchFounders();
+    fetchFooterText();
   }, []);
 
   const fetchFounders = async () => {
@@ -40,6 +42,21 @@ const Founders = () => {
       console.error("Error fetching founders:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchFooterText = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("settings")
+        .select("value")
+        .eq("key", "founders_footer_text")
+        .maybeSingle();
+
+      if (error) throw error;
+      if (data) setFooterText(data.value);
+    } catch (error) {
+      console.error("Error fetching footer text:", error);
     }
   };
 
@@ -67,7 +84,7 @@ const Founders = () => {
         </div>
       </section>
 
-      {/* Founders Grid */}
+      {/* Founders Grid - Side by Side */}
       <section className="py-16">
         <div className="container mx-auto px-4">
           {founders.length === 0 ? (
@@ -76,82 +93,99 @@ const Founders = () => {
               <p className="text-muted-foreground text-lg">Founder information coming soon.</p>
             </div>
           ) : (
-            <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
-              {founders.map((founder, index) => (
-                <div
-                  key={founder.id}
-                  className="group bg-card rounded-2xl overflow-hidden shadow-soft hover:shadow-large transition-glow border border-border hover-glow-strong neon-border animate-fade-in"
-                  style={{ animationDelay: `${index * 0.1}s` }}
-                >
-                  <div className="aspect-square overflow-hidden">
-                    <img
-                      src={founder.image_url}
-                      alt={founder.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-smooth"
-                    />
-                  </div>
-                  <div className="p-6 space-y-4">
-                    <div>
-                      <h3 className="text-2xl font-bold group-hover:text-primary transition-smooth">
-                        {founder.name}
-                      </h3>
-                      {founder.role && (
-                        <p className="text-primary font-medium">{founder.role}</p>
-                      )}
-                      {founder.work && (
-                        <p className="text-sm text-muted-foreground">{founder.work}</p>
-                      )}
+            <>
+              <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+                {founders.slice(0, 2).map((founder, index) => (
+                  <div
+                    key={founder.id}
+                    className="group bg-card rounded-2xl overflow-hidden shadow-soft hover:shadow-large transition-glow border border-border hover-glow-strong neon-border animate-fade-in text-center"
+                    style={{ animationDelay: `${index * 0.1}s` }}
+                  >
+                    {/* Circular Profile Image */}
+                    <div className="pt-8 flex justify-center">
+                      <div className="w-40 h-40 rounded-full overflow-hidden border-4 border-primary/20 shadow-lg">
+                        <img
+                          src={founder.image_url}
+                          alt={founder.name}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-smooth"
+                        />
+                      </div>
                     </div>
 
-                    {founder.motto && (
-                      <blockquote className="border-l-4 border-primary pl-4 italic text-muted-foreground">
-                        "{founder.motto}"
-                      </blockquote>
-                    )}
-
-                    <p className="text-muted-foreground leading-relaxed">
-                      {founder.bio}
-                    </p>
-
-                    {/* Social Media Links */}
-                    {(founder.linkedin_url || founder.instagram_url || founder.twitter_url) && (
-                      <div className="flex gap-3 pt-2">
-                        {founder.linkedin_url && (
-                          <a
-                            href={founder.linkedin_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="p-2 rounded-full bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground transition-smooth"
-                          >
-                            <Linkedin size={20} />
-                          </a>
+                    <div className="p-6 space-y-4">
+                      <div>
+                        <h3 className="text-2xl font-bold group-hover:text-primary transition-smooth">
+                          {founder.name}
+                        </h3>
+                        {founder.role && (
+                          <p className="text-primary font-medium">{founder.role}</p>
                         )}
-                        {founder.instagram_url && (
-                          <a
-                            href={founder.instagram_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="p-2 rounded-full bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground transition-smooth"
-                          >
-                            <Instagram size={20} />
-                          </a>
-                        )}
-                        {founder.twitter_url && (
-                          <a
-                            href={founder.twitter_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="p-2 rounded-full bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground transition-smooth"
-                          >
-                            <Twitter size={20} />
-                          </a>
+                        {founder.work && (
+                          <p className="text-sm text-muted-foreground">{founder.work}</p>
                         )}
                       </div>
-                    )}
+
+                      {founder.motto && (
+                        <blockquote className="border-l-4 border-primary pl-4 italic text-muted-foreground text-left">
+                          "{founder.motto}"
+                        </blockquote>
+                      )}
+
+                      <p className="text-muted-foreground leading-relaxed text-left">
+                        {founder.bio}
+                      </p>
+
+                      {/* Social Media Links */}
+                      {(founder.linkedin_url || founder.instagram_url || founder.twitter_url) && (
+                        <div className="flex gap-3 pt-2 justify-center">
+                          {founder.linkedin_url && (
+                            <a
+                              href={founder.linkedin_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="p-2 rounded-full bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground transition-smooth"
+                            >
+                              <Linkedin size={20} />
+                            </a>
+                          )}
+                          {founder.instagram_url && (
+                            <a
+                              href={founder.instagram_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="p-2 rounded-full bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground transition-smooth"
+                            >
+                              <Instagram size={20} />
+                            </a>
+                          )}
+                          {founder.twitter_url && (
+                            <a
+                              href={founder.twitter_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="p-2 rounded-full bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground transition-smooth"
+                            >
+                              <Twitter size={20} />
+                            </a>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Footer Text Block */}
+              {footerText && (
+                <div className="max-w-3xl mx-auto mt-12 text-center animate-fade-in">
+                  <div className="bg-gradient-to-r from-primary/10 via-secondary/20 to-primary/10 rounded-2xl p-8 border border-primary/20">
+                    <p className="text-lg md:text-xl text-foreground leading-relaxed whitespace-pre-line">
+                      {footerText}
+                    </p>
                   </div>
                 </div>
-              ))}
-            </div>
+              )}
+            </>
           )}
         </div>
       </section>
