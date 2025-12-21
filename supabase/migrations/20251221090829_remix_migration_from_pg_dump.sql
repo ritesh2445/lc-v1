@@ -4,6 +4,8 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto" WITH SCHEMA "extensions";
 CREATE EXTENSION IF NOT EXISTS "plpgsql" WITH SCHEMA "pg_catalog";
 CREATE EXTENSION IF NOT EXISTS "supabase_vault" WITH SCHEMA "vault";
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA "extensions";
+BEGIN;
+
 --
 -- PostgreSQL database dump
 --
@@ -192,7 +194,12 @@ CREATE TABLE public.founders (
     display_order integer DEFAULT 0,
     is_active boolean DEFAULT true,
     created_at timestamp with time zone DEFAULT now(),
-    updated_at timestamp with time zone DEFAULT now()
+    updated_at timestamp with time zone DEFAULT now(),
+    linkedin_url text,
+    instagram_url text,
+    twitter_url text,
+    motto text,
+    work text
 );
 
 
@@ -714,6 +721,13 @@ CREATE POLICY "Admins can insert services" ON public.services FOR INSERT WITH CH
 
 
 --
+-- Name: settings Admins can insert settings; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Admins can insert settings" ON public.settings FOR INSERT TO authenticated WITH CHECK (public.has_role(auth.uid(), 'admin'::public.app_role));
+
+
+--
 -- Name: testimonials Admins can insert testimonials; Type: POLICY; Schema: public; Owner: -
 --
 
@@ -788,6 +802,13 @@ CREATE POLICY "Admins can update quotes" ON public.quotes FOR UPDATE TO authenti
 --
 
 CREATE POLICY "Admins can update services" ON public.services FOR UPDATE USING (public.has_role(auth.uid(), 'admin'::public.app_role));
+
+
+--
+-- Name: settings Admins can update settings; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Admins can update settings" ON public.settings FOR UPDATE TO authenticated USING (public.has_role(auth.uid(), 'admin'::public.app_role));
 
 
 --
@@ -886,20 +907,6 @@ CREATE POLICY "Anyone can view events" ON public.events FOR SELECT USING (true);
 --
 
 CREATE POLICY "Anyone can view testimonials" ON public.testimonials FOR SELECT USING (true);
-
-
---
--- Name: settings Authenticated users can insert settings; Type: POLICY; Schema: public; Owner: -
---
-
-CREATE POLICY "Authenticated users can insert settings" ON public.settings FOR INSERT TO authenticated WITH CHECK (true);
-
-
---
--- Name: settings Authenticated users can update settings; Type: POLICY; Schema: public; Owner: -
---
-
-CREATE POLICY "Authenticated users can update settings" ON public.settings FOR UPDATE TO authenticated USING (true);
 
 
 --
@@ -1012,3 +1019,6 @@ ALTER TABLE public.volunteers ENABLE ROW LEVEL SECURITY;
 --
 
 
+
+
+COMMIT;
