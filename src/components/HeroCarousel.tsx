@@ -30,7 +30,7 @@ const defaultSlides: BannerSlide[] = [
     id: "1",
     title: "Meet Our Founders",
     subtitle: "The Heart Behind ListeningClub",
-    description: "Discover the passionate individuals who created ListeningClub to make mental health support accessible to everyone.",
+    description: "Geetika – Counsellor, Psychotherapist, and Parenting Coach, Geetika helps you feel heard, understood, and supported.\n\nSneha – NLP Practitioner, Life Coach, and Certified Zentangle Teacher, Sneha sparks creativity and empowers positive shifts in life.\n\nTogether, they run Listening to Mann ki Baat – a safe space where loneliness ends and real connection begins.",
     image_url: null,
     cta_text: "Meet the Team",
     cta_link: "/founders",
@@ -145,7 +145,7 @@ const HeroCarousel = () => {
                     <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold leading-tight">
                       {slide.title}
                     </h1>
-                    <p className="text-lg md:text-xl text-muted-foreground">
+                    <p className="text-lg md:text-xl text-muted-foreground whitespace-pre-line">
                       {slide.description}
                     </p>
                     <div className="flex flex-wrap gap-4 pt-4">
