@@ -81,7 +81,7 @@ MannKiBaat
 
         <div className="mt-12 pt-8 border-t border-border flex flex-col md:flex-row justify-between items-center">
           <p className="text-sm text-muted-foreground">
-            © 2025 ListeningClub. All rights reserved.
+            © 2025 Listening To MannKiBaat. All rights reserved.
           </p>
           <p className="text-sm text-muted-foreground flex items-center gap-1 mt-4 md:mt-0">
             Made with <Heart size={14} className="text-primary fill-primary" /> for mental wellness
