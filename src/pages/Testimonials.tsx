@@ -1,6 +1,6 @@
-import { Play } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
+import VideoPlayer from "@/components/VideoPlayer";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -70,27 +70,15 @@ const Testimonials = () => {
             {testimonials.map((testimonial, index) => (
               <div
                 key={testimonial.id}
-                className="group bg-card rounded-2xl overflow-hidden shadow-soft hover:shadow-large transition-glow border border-border hover-glow-strong neon-border animate-fade-in"
+                className="bg-card rounded-2xl overflow-hidden shadow-soft hover:shadow-large transition-glow border border-border hover-glow-strong neon-border animate-fade-in"
                 style={{ animationDelay: `${index * 0.1}s` }}
               >
-                {/* Video Thumbnail */}
-                <div className="relative h-56 overflow-hidden">
-                  <img
-                    src={testimonial.thumbnail_url}
-                    alt={testimonial.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-smooth duration-500"
-                  />
-                  <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-smooth">
-                    <a 
-                      href={testimonial.video_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="w-16 h-16 bg-primary rounded-full flex items-center justify-center shadow-[0_0_40px_rgba(255,127,107,0.8)] group-hover:scale-110 transition-glow"
-                    >
-                      <Play className="text-primary-foreground ml-1" size={28} />
-                    </a>
-                  </div>
-                </div>
+                {/* Video Player with Thumbnail */}
+                <VideoPlayer
+                  videoUrl={testimonial.video_url}
+                  thumbnailUrl={testimonial.thumbnail_url}
+                  title={testimonial.name}
+                />
 
                 {/* Content */}
                 <div className="p-6 space-y-4">
