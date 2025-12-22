@@ -116,85 +116,68 @@ const HeroCarousel = () => {
     return slide.image_url || heroImage;
   };
 
+  // Get current slide for rendering
+  const currentSlideData = slides[currentSlide];
+  const CurrentIcon = iconMap[currentSlideData?.icon_type] || Heart;
+
   return (
     <section className="relative gradient-hero overflow-hidden">
-      <div className="container mx-auto px-4 py-20 md:py-32">
-        <div className="grid md:grid-cols-2 gap-12 items-center">
-          {/* Content */}
-          <div className="relative min-h-[320px]">
-            {slides.map((slide, index) => {
-              const Icon = iconMap[slide.icon_type] || Heart;
-              return (
-                <div
-                  key={slide.id}
-                  className={`absolute inset-0 transition-all duration-500 ease-in-out ${
-                    index === currentSlide
-                      ? "opacity-100 translate-x-0"
-                      : index < currentSlide
-                      ? "opacity-0 -translate-x-full"
-                      : "opacity-0 translate-x-full"
-                  }`}
-                >
-                  <div className="space-y-6">
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
-                        <Icon className="text-primary" size={24} />
-                      </div>
-                      <span className="text-primary font-medium">{slide.subtitle}</span>
-                    </div>
-                    <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold leading-tight">
-                      {slide.title}
-                    </h1>
-                    <p className="text-lg md:text-xl text-muted-foreground whitespace-pre-line">
-                      {slide.description}
-                    </p>
-                    <div className="flex flex-wrap gap-4 pt-4">
-                      <Link to={slide.cta_link}>
-                        <Button size="lg" className="shadow-medium">
-                          {slide.cta_text}
-                        </Button>
-                      </Link>
-                      <Link to="/contact">
-                        <Button size="lg" variant="outline" className="shadow-soft">
-                          Contact Us
-                        </Button>
-                      </Link>
-                    </div>
-                  </div>
+      <div className="container mx-auto px-4 py-12 sm:py-16 md:py-24 lg:py-32">
+        <div className="flex flex-col lg:grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+          {/* Content - Always visible, no absolute positioning on mobile */}
+          <div className="relative z-10 w-full order-2 lg:order-1">
+            <div className="space-y-4 sm:space-y-6">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-primary/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <CurrentIcon className="text-primary" size={20} />
                 </div>
-              );
-            })}
+                <span className="text-primary font-medium text-sm sm:text-base">{currentSlideData?.subtitle}</span>
+              </div>
+              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold leading-tight">
+                {currentSlideData?.title}
+              </h1>
+              <p className="text-base sm:text-lg md:text-xl text-muted-foreground whitespace-pre-line line-clamp-6 sm:line-clamp-none">
+                {currentSlideData?.description}
+              </p>
+              <div className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4 pt-2 sm:pt-4">
+                <Link to={currentSlideData?.cta_link || "/"} className="w-full sm:w-auto">
+                  <Button size="lg" className="shadow-medium w-full sm:w-auto">
+                    {currentSlideData?.cta_text}
+                  </Button>
+                </Link>
+                <Link to="/contact" className="w-full sm:w-auto">
+                  <Button size="lg" variant="outline" className="shadow-soft w-full sm:w-auto">
+                    Contact Us
+                  </Button>
+                </Link>
+              </div>
+            </div>
           </div>
 
-          {/* Image - Changes per slide */}
-          <div className="relative animate-scale-in">
-            {slides.map((slide, index) => (
+          {/* Image - Responsive container that adapts to any aspect ratio */}
+          <div className="relative w-full order-1 lg:order-2 animate-scale-in">
+            <div className="relative w-full max-h-[300px] sm:max-h-[400px] lg:max-h-none overflow-hidden rounded-2xl sm:rounded-3xl">
               <img
-                key={slide.id}
-                src={getSlideImage(slide, index)}
-                alt={slide.title}
-                className={`rounded-3xl shadow-large w-full h-auto object-cover transition-all duration-500 ${
-                  index === currentSlide
-                    ? "opacity-100 scale-100"
-                    : "opacity-0 scale-95 absolute inset-0"
-                }`}
+                src={getSlideImage(currentSlideData, currentSlide)}
+                alt={currentSlideData?.title}
+                className="w-full h-auto object-cover rounded-2xl sm:rounded-3xl shadow-large transition-all duration-500"
               />
-            ))}
-            {/* Floating accents */}
-            <div className="absolute -top-8 -right-8 w-24 h-24 bg-primary/20 rounded-full blur-2xl animate-float animate-pulse-glow"></div>
-            <div className="absolute -bottom-8 -left-8 w-32 h-32 bg-secondary/40 rounded-full blur-3xl animate-float" style={{ animationDelay: "1s" }}></div>
+            </div>
+            {/* Floating accents - Hidden on mobile for cleaner look */}
+            <div className="hidden sm:block absolute -top-8 -right-8 w-24 h-24 bg-primary/20 rounded-full blur-2xl animate-float animate-pulse-glow"></div>
+            <div className="hidden sm:block absolute -bottom-8 -left-8 w-32 h-32 bg-secondary/40 rounded-full blur-3xl animate-float" style={{ animationDelay: "1s" }}></div>
           </div>
         </div>
 
         {/* Navigation */}
         {slides.length > 1 && (
-          <div className="flex items-center justify-center gap-4 mt-12">
+          <div className="flex items-center justify-center gap-3 sm:gap-4 mt-8 sm:mt-12">
             <button
               onClick={() => handleManualNav('prev')}
               className="p-2 rounded-full bg-card border border-border shadow-soft hover:shadow-medium hover:scale-105 transition-smooth"
               aria-label="Previous slide"
             >
-              <ChevronLeft size={24} />
+              <ChevronLeft size={20} className="sm:w-6 sm:h-6" />
             </button>
 
             <div className="flex gap-2">
@@ -202,9 +185,9 @@ const HeroCarousel = () => {
                 <button
                   key={index}
                   onClick={() => goToSlide(index)}
-                  className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                  className={`w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full transition-all duration-300 ${
                     index === currentSlide
-                      ? "bg-primary w-8 shadow-[0_0_15px_rgba(255,127,107,0.5)]"
+                      ? "bg-primary w-6 sm:w-8 shadow-[0_0_15px_rgba(255,127,107,0.5)]"
                       : "bg-muted hover:bg-muted-foreground/50"
                   }`}
                   aria-label={`Go to slide ${index + 1}`}
@@ -217,7 +200,7 @@ const HeroCarousel = () => {
               className="p-2 rounded-full bg-card border border-border shadow-soft hover:shadow-medium hover:scale-105 transition-smooth"
               aria-label="Next slide"
             >
-              <ChevronRight size={24} />
+              <ChevronRight size={20} className="sm:w-6 sm:h-6" />
             </button>
           </div>
         )}
