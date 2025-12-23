@@ -62,6 +62,8 @@ const HeroCarousel = () => {
   const [slides, setSlides] = useState<BannerSlide[]>(defaultSlides);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
+  const [imageLoaded, setImageLoaded] = useState(false);
 
   useEffect(() => {
     fetchSlides();
@@ -81,6 +83,8 @@ const HeroCarousel = () => {
       }
     } catch (error) {
       console.error("Error fetching banner slides:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -112,6 +116,11 @@ const HeroCarousel = () => {
     setTimeout(() => setIsAutoPlaying(true), 10000);
   };
 
+  // Reset image loaded state when slide changes
+  useEffect(() => {
+    setImageLoaded(false);
+  }, [currentSlide]);
+
   const getSlideImage = (slide: BannerSlide, index: number) => {
     return slide.image_url || heroImage;
   };
@@ -119,6 +128,37 @@ const HeroCarousel = () => {
   // Get current slide for rendering
   const currentSlideData = slides[currentSlide];
   const CurrentIcon = iconMap[currentSlideData?.icon_type] || Heart;
+
+  // Show skeleton during initial load
+  if (isLoading) {
+    return (
+      <section className="relative gradient-hero overflow-hidden">
+        <div className="container mx-auto px-4 py-12 sm:py-16 md:py-24 lg:py-32">
+          <div className="flex flex-col lg:grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+            <div className="w-full order-2 lg:order-1 space-y-4 sm:space-y-6">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-muted rounded-xl animate-pulse" />
+                <div className="h-4 w-32 bg-muted rounded animate-pulse" />
+              </div>
+              <div className="h-12 sm:h-16 w-3/4 bg-muted rounded animate-pulse" />
+              <div className="space-y-2">
+                <div className="h-4 w-full bg-muted rounded animate-pulse" />
+                <div className="h-4 w-5/6 bg-muted rounded animate-pulse" />
+                <div className="h-4 w-4/6 bg-muted rounded animate-pulse" />
+              </div>
+              <div className="flex gap-4 pt-4">
+                <div className="h-10 w-32 bg-muted rounded animate-pulse" />
+                <div className="h-10 w-32 bg-muted rounded animate-pulse" />
+              </div>
+            </div>
+            <div className="w-full order-1 lg:order-2">
+              <div className="aspect-[4/3] lg:aspect-square bg-muted rounded-2xl sm:rounded-3xl animate-pulse" />
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="relative gradient-hero overflow-hidden">
@@ -157,10 +197,17 @@ const HeroCarousel = () => {
           {/* Image - Responsive container that adapts to any aspect ratio */}
           <div className="relative w-full order-1 lg:order-2 animate-scale-in">
             <div className="relative w-full max-h-[300px] sm:max-h-[400px] lg:max-h-none overflow-hidden rounded-2xl sm:rounded-3xl">
+              {/* Skeleton placeholder while image loads */}
+              {!imageLoaded && (
+                <div className="absolute inset-0 bg-muted animate-pulse rounded-2xl sm:rounded-3xl" />
+              )}
               <img
                 src={getSlideImage(currentSlideData, currentSlide)}
                 alt={currentSlideData?.title}
-                className="w-full h-auto object-cover rounded-2xl sm:rounded-3xl shadow-large transition-all duration-500"
+                className={`w-full h-auto object-cover rounded-2xl sm:rounded-3xl shadow-large transition-opacity duration-300 ${
+                  imageLoaded ? "opacity-100" : "opacity-0"
+                }`}
+                onLoad={() => setImageLoaded(true)}
               />
             </div>
             {/* Floating accents - Hidden on mobile for cleaner look */}
