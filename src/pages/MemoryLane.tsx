@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import OptimizedImage from "@/components/OptimizedImage";
+import GalleryLightbox from "@/components/GalleryLightbox";
 
 interface GalleryImage {
   id: string;
@@ -49,8 +50,14 @@ const MemoryLane = () => {
         </section>
 
         {loading ? (
-          <div className="flex justify-center items-center py-20">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+          // Skeleton loading grid
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div
+                key={i}
+                className="aspect-square rounded-lg bg-muted animate-pulse"
+              />
+            ))}
           </div>
         ) : images.length === 0 ? (
           <div className="text-center py-20">
@@ -61,16 +68,17 @@ const MemoryLane = () => {
             {images.map((image) => (
               <div
                 key={image.id}
-                className="group relative overflow-hidden rounded-lg shadow-md hover:shadow-xl transition-all cursor-pointer aspect-square"
-                onClick={() => setSelectedImage(image)}
+                className="group relative overflow-hidden rounded-lg shadow-md hover:shadow-xl transition-all cursor-pointer"
               >
-                <img
+                <OptimizedImage
                   src={image.image_url}
                   alt={image.caption || "Memory"}
-                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                  className="aspect-square transition-transform duration-300 group-hover:scale-110"
+                  thumbnailSize={400}
+                  onClick={() => setSelectedImage(image)}
                 />
                 {image.caption && (
-                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-4 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
                     <p className="text-white text-sm">{image.caption}</p>
                   </div>
                 )}
@@ -82,22 +90,13 @@ const MemoryLane = () => {
 
       <Footer />
 
-      <Dialog open={!!selectedImage} onOpenChange={() => setSelectedImage(null)}>
-        <DialogContent className="max-w-4xl">
-          {selectedImage && (
-            <div className="space-y-4">
-              <img
-                src={selectedImage.image_url}
-                alt={selectedImage.caption || "Memory"}
-                className="w-full h-auto rounded-lg"
-              />
-              {selectedImage.caption && (
-                <p className="text-center text-muted-foreground">{selectedImage.caption}</p>
-              )}
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      {/* Full resolution lightbox - only loads when opened */}
+      <GalleryLightbox
+        isOpen={!!selectedImage}
+        onClose={() => setSelectedImage(null)}
+        imageUrl={selectedImage?.image_url || ""}
+        caption={selectedImage?.caption}
+      />
     </div>
   );
 };
