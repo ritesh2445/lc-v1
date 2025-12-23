@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Users, Calendar, Heart, Sparkles, Star, Shield } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -59,11 +59,36 @@ const defaultSlides: BannerSlide[] = [
 ];
 
 const HeroCarousel = () => {
+  const navigate = useNavigate();
   const [slides, setSlides] = useState<BannerSlide[]>(defaultSlides);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [imageLoaded, setImageLoaded] = useState(false);
+
+  const handleCtaClick = (ctaLink: string) => {
+    if (ctaLink.includes('#')) {
+      const [path, hash] = ctaLink.split('#');
+      if (path === '' || path === '/') {
+        // Same page scroll
+        const element = document.getElementById(hash);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth' });
+        }
+      } else {
+        // Navigate to page then scroll
+        navigate(path);
+        setTimeout(() => {
+          const element = document.getElementById(hash);
+          if (element) {
+            element.scrollIntoView({ behavior: 'smooth' });
+          }
+        }, 100);
+      }
+    } else {
+      navigate(ctaLink);
+    }
+  };
 
   useEffect(() => {
     fetchSlides();
@@ -180,11 +205,13 @@ const HeroCarousel = () => {
                 {currentSlideData?.description}
               </p>
               <div className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4 pt-2 sm:pt-4">
-                <Link to={currentSlideData?.cta_link || "/"} className="w-full sm:w-auto">
-                  <Button size="lg" className="shadow-medium w-full sm:w-auto">
-                    {currentSlideData?.cta_text}
-                  </Button>
-                </Link>
+                <Button 
+                  size="lg" 
+                  className="shadow-medium w-full sm:w-auto"
+                  onClick={() => handleCtaClick(currentSlideData?.cta_link || "/")}
+                >
+                  {currentSlideData?.cta_text}
+                </Button>
                 <Link to="/contact" className="w-full sm:w-auto">
                   <Button size="lg" variant="outline" className="shadow-soft w-full sm:w-auto">
                     Contact Us
