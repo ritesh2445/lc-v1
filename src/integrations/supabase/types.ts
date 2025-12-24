@@ -91,28 +91,37 @@ export type Database = {
       }
       contact_submissions: {
         Row: {
+          age: number | null
+          city: string | null
           created_at: string
-          email: string
+          email: string | null
           id: string
           ip_hash: string | null
-          message: string
+          message: string | null
           name: string
+          profession: string | null
         }
         Insert: {
+          age?: number | null
+          city?: string | null
           created_at?: string
-          email: string
+          email?: string | null
           id?: string
           ip_hash?: string | null
-          message: string
+          message?: string | null
           name: string
+          profession?: string | null
         }
         Update: {
+          age?: number | null
+          city?: string | null
           created_at?: string
-          email?: string
+          email?: string | null
           id?: string
           ip_hash?: string | null
-          message?: string
+          message?: string | null
           name?: string
+          profession?: string | null
         }
         Relationships: []
       }
