@@ -16,12 +16,6 @@ function hashIP(ip: string): string {
   return hash.toString(16);
 }
 
-// Validate email format
-function isValidEmail(email: string): boolean {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
-}
-
 // Sanitize input - remove potential HTML/script tags
 function sanitizeInput(input: string): string {
   return input
@@ -77,10 +71,10 @@ Deno.serve(async (req) => {
 
     // Parse and validate request body
     const body = await req.json();
-    const { name, email, message } = body;
+    const { name, age, profession, city } = body;
 
     // Validate required fields
-    if (!name || !email || !message) {
+    if (!name || !age || !profession || !city) {
       return new Response(
         JSON.stringify({ error: 'All fields are required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -95,47 +89,49 @@ Deno.serve(async (req) => {
       );
     }
 
-    if (email.length > 255) {
+    if (profession.length > 100) {
       return new Response(
-        JSON.stringify({ error: 'Email must be less than 255 characters' }),
+        JSON.stringify({ error: 'Profession must be less than 100 characters' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    if (message.length > 2000) {
+    if (city.length > 100) {
       return new Response(
-        JSON.stringify({ error: 'Message must be less than 2000 characters' }),
+        JSON.stringify({ error: 'City must be less than 100 characters' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Validate email format
-    if (!isValidEmail(email)) {
+    // Validate age
+    const parsedAge = parseInt(age);
+    if (isNaN(parsedAge) || parsedAge < 1 || parsedAge > 150) {
       return new Response(
-        JSON.stringify({ error: 'Please provide a valid email address' }),
+        JSON.stringify({ error: 'Please provide a valid age' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     // Sanitize inputs
     const sanitizedName = sanitizeInput(name);
-    const sanitizedEmail = sanitizeInput(email);
-    const sanitizedMessage = sanitizeInput(message);
+    const sanitizedProfession = sanitizeInput(profession);
+    const sanitizedCity = sanitizeInput(city);
 
     // Insert submission
     const { error: insertError } = await supabase
       .from('contact_submissions')
       .insert({
         name: sanitizedName,
-        email: sanitizedEmail,
-        message: sanitizedMessage,
+        age: parsedAge,
+        profession: sanitizedProfession,
+        city: sanitizedCity,
         ip_hash: ipHash,
       });
 
     if (insertError) {
       console.error('Insert error:', insertError);
       return new Response(
-        JSON.stringify({ error: 'Failed to submit message. Please try again.' }),
+        JSON.stringify({ error: 'Failed to submit. Please try again.' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -143,7 +139,7 @@ Deno.serve(async (req) => {
     console.log(`Contact form submitted successfully from IP hash: ${ipHash}`);
 
     return new Response(
-      JSON.stringify({ success: true, message: 'Your message has been sent successfully!' }),
+      JSON.stringify({ success: true, message: 'Your information has been submitted successfully!' }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 

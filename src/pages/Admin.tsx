@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Lock, Calendar, MessageSquare, Quote, Save, Plus, Edit, Trash2, HelpCircle, Phone, Image as ImageIcon, Upload, Video, Heart, Layers, Users, Briefcase } from "lucide-react";
+import { Lock, Calendar, MessageSquare, Quote, Save, Plus, Edit, Trash2, HelpCircle, Phone, Image as ImageIcon, Upload, Video, Heart, Layers, Users, Briefcase, Download, FileText } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -122,6 +122,7 @@ const Admin = () => {
   const [foundersFooterText, setFoundersFooterText] = useState<string>("");
   const [services, setServices] = useState<any[]>([]);
   const [bannerSlides, setBannerSlides] = useState<any[]>([]);
+  const [contactSubmissions, setContactSubmissions] = useState<any[]>([]);
   const [editingItem, setEditingItem] = useState<any>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -254,6 +255,7 @@ const Admin = () => {
     fetchFoundersFooterText();
     fetchServices();
     fetchBannerSlides();
+    fetchContactSubmissions();
   }, []);
 
   const fetchWhatsAppContact = async () => {
@@ -336,6 +338,44 @@ const Admin = () => {
   const fetchBannerSlides = async () => {
     const { data } = await supabase.from("banner_slides").select("*").order("display_order", { ascending: true });
     if (data) setBannerSlides(data);
+  };
+
+  const fetchContactSubmissions = async () => {
+    const { data } = await supabase.from("contact_submissions").select("*").order("created_at", { ascending: false });
+    if (data) setContactSubmissions(data);
+  };
+
+  const exportToCSV = () => {
+    if (contactSubmissions.length === 0) {
+      toast({ title: "No Data", description: "No submissions to export", variant: "destructive" });
+      return;
+    }
+
+    const headers = ["Name", "Age", "Profession", "City", "Submitted At"];
+    const csvRows = [headers.join(",")];
+
+    contactSubmissions.forEach((submission) => {
+      const row = [
+        `"${(submission.name || "").replace(/"/g, '""')}"`,
+        submission.age || "",
+        `"${(submission.profession || "").replace(/"/g, '""')}"`,
+        `"${(submission.city || "").replace(/"/g, '""')}"`,
+        new Date(submission.created_at).toLocaleString(),
+      ];
+      csvRows.push(row.join(","));
+    });
+
+    const csvContent = csvRows.join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", `contact_submissions_${new Date().toISOString().split("T")[0]}.csv`);
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast({ title: "Success", description: "CSV exported successfully" });
   };
 
   const onWhatsAppSubmit = async (values: WhatsAppFormValues) => {
@@ -996,6 +1036,7 @@ const Admin = () => {
                 <TabsTrigger value="founders">Founders</TabsTrigger>
                 <TabsTrigger value="services">Services</TabsTrigger>
                 <TabsTrigger value="banners">Banners</TabsTrigger>
+                <TabsTrigger value="submissions">Submissions</TabsTrigger>
               </TabsList>
 
               {/* Events Tab */}
@@ -1406,23 +1447,9 @@ const Admin = () => {
                             <FormMessage />
                           </FormItem>
                         )} />
-                        <FormField control={contactForm.control} name="address" render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Address</FormLabel>
-                            <FormControl><Textarea {...field} /></FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )} />
                         <FormField control={contactForm.control} name="instagram_url" render={({ field }) => (
                           <FormItem>
                             <FormLabel>Instagram URL</FormLabel>
-                            <FormControl><Input {...field} /></FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )} />
-                        <FormField control={contactForm.control} name="linkedin_url" render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>LinkedIn URL</FormLabel>
                             <FormControl><Input {...field} /></FormControl>
                             <FormMessage />
                           </FormItem>
@@ -2043,6 +2070,51 @@ const Admin = () => {
                   ))}
                   {bannerSlides.length === 0 && <p className="text-muted-foreground">No banner slides added yet</p>}
                 </div>
+              </TabsContent>
+
+              {/* Submissions Tab */}
+              <TabsContent value="submissions" className="space-y-4">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold flex items-center gap-2">
+                    <FileText size={20} />
+                    Contact Form Submissions ({contactSubmissions.length})
+                  </h3>
+                  <Button onClick={exportToCSV} disabled={contactSubmissions.length === 0}>
+                    <Download className="mr-2" size={18} />
+                    Export CSV
+                  </Button>
+                </div>
+
+                {contactSubmissions.length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <table className="w-full border-collapse">
+                      <thead>
+                        <tr className="border-b border-border">
+                          <th className="text-left p-3 font-semibold">Name</th>
+                          <th className="text-left p-3 font-semibold">Age</th>
+                          <th className="text-left p-3 font-semibold">Profession</th>
+                          <th className="text-left p-3 font-semibold">City</th>
+                          <th className="text-left p-3 font-semibold">Submitted</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {contactSubmissions.map((submission) => (
+                          <tr key={submission.id} className="border-b border-border hover:bg-muted/50">
+                            <td className="p-3">{submission.name}</td>
+                            <td className="p-3">{submission.age}</td>
+                            <td className="p-3">{submission.profession}</td>
+                            <td className="p-3">{submission.city}</td>
+                            <td className="p-3 text-sm text-muted-foreground">
+                              {new Date(submission.created_at).toLocaleDateString()} {new Date(submission.created_at).toLocaleTimeString()}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <p className="text-muted-foreground">No submissions yet</p>
+                )}
               </TabsContent>
             </Tabs>
           </div>
