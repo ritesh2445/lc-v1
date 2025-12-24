@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Lock, Calendar, MessageSquare, Quote, Save, Plus, Edit, Trash2, HelpCircle, Phone, Image as ImageIcon, Upload, Video, Heart, Layers, Users, Briefcase, Download, FileText } from "lucide-react";
+import { Lock, Calendar, MessageSquare, Quote, Save, Plus, Edit, Trash2, HelpCircle, Phone, Image as ImageIcon, Upload, Video, Heart, Layers, Users, Briefcase, Download, FileText, CalendarIcon } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -134,6 +134,8 @@ const Admin = () => {
   const [selectedFounderImageFile, setSelectedFounderImageFile] = useState<File | null>(null);
   const [selectedServiceImageFile, setSelectedServiceImageFile] = useState<File | null>(null);
   const [selectedBannerImageFile, setSelectedBannerImageFile] = useState<File | null>(null);
+  const [exportStartDate, setExportStartDate] = useState<string>("");
+  const [exportEndDate, setExportEndDate] = useState<string>("");
   
   const whatsappForm = useForm<WhatsAppFormValues>({
     resolver: zodResolver(whatsappSchema),
@@ -345,16 +347,34 @@ const Admin = () => {
     if (data) setContactSubmissions(data);
   };
 
+  const getFilteredSubmissions = () => {
+    return contactSubmissions.filter((submission) => {
+      const submissionDate = new Date(submission.created_at);
+      if (exportStartDate) {
+        const startDate = new Date(exportStartDate);
+        startDate.setHours(0, 0, 0, 0);
+        if (submissionDate < startDate) return false;
+      }
+      if (exportEndDate) {
+        const endDate = new Date(exportEndDate);
+        endDate.setHours(23, 59, 59, 999);
+        if (submissionDate > endDate) return false;
+      }
+      return true;
+    });
+  };
+
   const exportToCSV = () => {
-    if (contactSubmissions.length === 0) {
-      toast({ title: "No Data", description: "No submissions to export", variant: "destructive" });
+    const filtered = getFilteredSubmissions();
+    if (filtered.length === 0) {
+      toast({ title: "No Data", description: "No submissions to export for the selected date range", variant: "destructive" });
       return;
     }
 
     const headers = ["Name", "Age", "Profession", "City", "Submitted At"];
     const csvRows = [headers.join(",")];
 
-    contactSubmissions.forEach((submission) => {
+    filtered.forEach((submission) => {
       const row = [
         `"${(submission.name || "").replace(/"/g, '""')}"`,
         submission.age || "",
@@ -370,12 +390,15 @@ const Admin = () => {
     const link = document.createElement("a");
     const url = URL.createObjectURL(blob);
     link.setAttribute("href", url);
-    link.setAttribute("download", `contact_submissions_${new Date().toISOString().split("T")[0]}.csv`);
+    const dateRange = exportStartDate || exportEndDate 
+      ? `_${exportStartDate || 'start'}_to_${exportEndDate || 'end'}` 
+      : "";
+    link.setAttribute("download", `contact_submissions${dateRange}_${new Date().toISOString().split("T")[0]}.csv`);
     link.style.visibility = "hidden";
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    toast({ title: "Success", description: "CSV exported successfully" });
+    toast({ title: "Success", description: `Exported ${filtered.length} submissions to CSV` });
   };
 
   const onWhatsAppSubmit = async (values: WhatsAppFormValues) => {
@@ -2074,15 +2097,56 @@ const Admin = () => {
 
               {/* Submissions Tab */}
               <TabsContent value="submissions" className="space-y-4">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold flex items-center gap-2">
-                    <FileText size={20} />
-                    Contact Form Submissions ({contactSubmissions.length})
-                  </h3>
-                  <Button onClick={exportToCSV} disabled={contactSubmissions.length === 0}>
-                    <Download className="mr-2" size={18} />
-                    Export CSV
-                  </Button>
+                <div className="flex flex-col gap-4 mb-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-semibold flex items-center gap-2">
+                      <FileText size={20} />
+                      Contact Form Submissions ({contactSubmissions.length})
+                    </h3>
+                  </div>
+                  
+                  {/* Date Range Filter */}
+                  <div className="flex flex-wrap items-end gap-4 p-4 bg-muted/50 rounded-lg">
+                    <div className="flex flex-col gap-1">
+                      <Label className="text-sm text-muted-foreground flex items-center gap-1">
+                        <CalendarIcon size={14} />
+                        From Date
+                      </Label>
+                      <Input
+                        type="date"
+                        value={exportStartDate}
+                        onChange={(e) => setExportStartDate(e.target.value)}
+                        className="w-[160px]"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <Label className="text-sm text-muted-foreground flex items-center gap-1">
+                        <CalendarIcon size={14} />
+                        To Date
+                      </Label>
+                      <Input
+                        type="date"
+                        value={exportEndDate}
+                        onChange={(e) => setExportEndDate(e.target.value)}
+                        className="w-[160px]"
+                      />
+                    </div>
+                    {(exportStartDate || exportEndDate) && (
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => { setExportStartDate(""); setExportEndDate(""); }}
+                      >
+                        Clear Dates
+                      </Button>
+                    )}
+                    <div className="ml-auto">
+                      <Button onClick={exportToCSV} disabled={getFilteredSubmissions().length === 0}>
+                        <Download className="mr-2" size={18} />
+                        Export CSV ({getFilteredSubmissions().length})
+                      </Button>
+                    </div>
+                  </div>
                 </div>
 
                 {contactSubmissions.length > 0 ? (
