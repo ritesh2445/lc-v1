@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Instagram, Linkedin, Mail, Heart } from "lucide-react";
+import { Instagram, Mail, Heart } from "lucide-react";
 import logo from "@/assets/logo.jpeg";
 const Footer = () => {
   return <footer className="bg-secondary/50 border-t border-border mt-20">
@@ -68,9 +68,6 @@ MannKiBaat
             <div className="flex space-x-4">
               <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-smooth">
                 <Instagram size={20} />
-              </a>
-              <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-smooth">
-                <Linkedin size={20} />
               </a>
               <a href="mailto:hello@listeningclub.com" className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-smooth">
                 <Mail size={20} />

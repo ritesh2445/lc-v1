@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { supabase } from "@/integrations/supabase/client";
-import { User, Linkedin, Instagram, Twitter } from "lucide-react";
+import { User, Instagram, Twitter } from "lucide-react";
 
 interface Founder {
   id: string;
@@ -136,18 +136,8 @@ const Founders = () => {
                       </p>
 
                       {/* Social Media Links */}
-                      {(founder.linkedin_url || founder.instagram_url || founder.twitter_url) && (
+                      {(founder.instagram_url || founder.twitter_url) && (
                         <div className="flex gap-3 pt-2 justify-center">
-                          {founder.linkedin_url && (
-                            <a
-                              href={founder.linkedin_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="p-2 rounded-full bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground transition-smooth"
-                            >
-                              <Linkedin size={20} />
-                            </a>
-                          )}
                           {founder.instagram_url && (
                             <a
                               href={founder.instagram_url}

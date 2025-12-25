@@ -10,6 +10,7 @@ interface Event {
   id: string;
   name: string;
   date: string;
+  end_date: string | null;
   time: string;
   description: string;
   location: string;
@@ -88,6 +89,7 @@ const Events = () => {
           id: event.id,
           name: event.name,
           date: event.date,
+          end_date: event.end_date,
           time: event.time,
           description: event.description,
           location: event.location,
@@ -159,12 +161,20 @@ const Events = () => {
                   <div className="space-y-2 text-sm text-muted-foreground">
                     <div className="flex items-center gap-2">
                       <Calendar size={16} className="text-primary" />
-                      <span>{new Date(event.date).toLocaleDateString('en-US', { 
-                        weekday: 'long', 
-                        year: 'numeric', 
-                        month: 'long', 
-                        day: 'numeric' 
-                      })}</span>
+                      <span>
+                        {new Date(event.date).toLocaleDateString('en-US', { 
+                          weekday: 'long', 
+                          year: 'numeric', 
+                          month: 'long', 
+                          day: 'numeric' 
+                        })}
+                        {event.end_date && ` - ${new Date(event.end_date).toLocaleDateString('en-US', { 
+                          weekday: 'long', 
+                          year: 'numeric', 
+                          month: 'long', 
+                          day: 'numeric' 
+                        })}`}
+                      </span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Clock size={16} className="text-primary" />

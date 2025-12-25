@@ -71,10 +71,10 @@ Deno.serve(async (req) => {
 
     // Parse and validate request body
     const body = await req.json();
-    const { name, age, profession, city } = body;
+    const { name, phone, age, profession, city } = body;
 
     // Validate required fields
-    if (!name || !age || !profession || !city) {
+    if (!name || !phone || !age || !profession || !city) {
       return new Response(
         JSON.stringify({ error: 'All fields are required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -85,6 +85,13 @@ Deno.serve(async (req) => {
     if (name.length > 100) {
       return new Response(
         JSON.stringify({ error: 'Name must be less than 100 characters' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (phone.length > 20) {
+      return new Response(
+        JSON.stringify({ error: 'Phone number must be less than 20 characters' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -114,6 +121,7 @@ Deno.serve(async (req) => {
 
     // Sanitize inputs
     const sanitizedName = sanitizeInput(name);
+    const sanitizedPhone = sanitizeInput(phone);
     const sanitizedProfession = sanitizeInput(profession);
     const sanitizedCity = sanitizeInput(city);
 
@@ -122,6 +130,7 @@ Deno.serve(async (req) => {
       .from('contact_submissions')
       .insert({
         name: sanitizedName,
+        phone: sanitizedPhone,
         age: parsedAge,
         profession: sanitizedProfession,
         city: sanitizedCity,
