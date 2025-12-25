@@ -99,6 +99,7 @@ export type Database = {
           ip_hash: string | null
           message: string | null
           name: string
+          phone: string | null
           profession: string | null
         }
         Insert: {
@@ -110,6 +111,7 @@ export type Database = {
           ip_hash?: string | null
           message?: string | null
           name: string
+          phone?: string | null
           profession?: string | null
         }
         Update: {
@@ -121,6 +123,7 @@ export type Database = {
           ip_hash?: string | null
           message?: string | null
           name?: string
+          phone?: string | null
           profession?: string | null
         }
         Relationships: []
@@ -131,6 +134,7 @@ export type Database = {
           created_by: string | null
           date: string
           description: string
+          end_date: string | null
           id: string
           is_booking_open: boolean | null
           location: string
@@ -145,6 +149,7 @@ export type Database = {
           created_by?: string | null
           date: string
           description: string
+          end_date?: string | null
           id?: string
           is_booking_open?: boolean | null
           location: string
@@ -159,6 +164,7 @@ export type Database = {
           created_by?: string | null
           date?: string
           description?: string
+          end_date?: string | null
           id?: string
           is_booking_open?: boolean | null
           location?: string

@@ -25,6 +25,7 @@ const whatsappSchema = z.object({
 const eventSchema = z.object({
   name: z.string().min(1).max(200).trim(),
   date: z.string().min(1),
+  end_date: z.string().optional(),
   time: z.string().min(1).max(100).trim(),
   description: z.string().min(1).max(1000).trim(),
   location: z.string().min(1).max(200).trim(),
@@ -54,9 +55,7 @@ const faqSchema = z.object({
 const contactSchema = z.object({
   email: z.string().email().max(255).trim().optional().or(z.literal('')),
   phone: z.string().max(50).trim().optional(),
-  address: z.string().max(500).trim().optional(),
   instagram_url: z.string().max(500).trim().optional(),
-  linkedin_url: z.string().max(500).trim().optional(),
 });
 
 const gallerySchema = z.object({
@@ -72,7 +71,6 @@ const founderSchema = z.object({
   work: z.string().max(500).trim().optional(),
   motto: z.string().max(500).trim().optional(),
   image_url: z.string().max(500).trim().optional(),
-  linkedin_url: z.string().max(500).trim().optional(),
   instagram_url: z.string().max(500).trim().optional(),
   twitter_url: z.string().max(500).trim().optional(),
   display_order: z.number().int().min(0).default(0),
@@ -147,6 +145,7 @@ const Admin = () => {
     defaultValues: {
       name: "",
       date: "",
+      end_date: "",
       time: "",
       description: "",
       location: "",
@@ -188,9 +187,7 @@ const Admin = () => {
     defaultValues: {
       email: "",
       phone: "",
-      address: "",
       instagram_url: "",
-      linkedin_url: "",
     },
   });
 
@@ -212,7 +209,6 @@ const Admin = () => {
       work: "",
       motto: "",
       image_url: "",
-      linkedin_url: "",
       instagram_url: "",
       twitter_url: "",
       display_order: 0,
@@ -371,12 +367,13 @@ const Admin = () => {
       return;
     }
 
-    const headers = ["Name", "Age", "Profession", "City", "Submitted At"];
+    const headers = ["Name", "Phone", "Age", "Profession", "City", "Submitted At"];
     const csvRows = [headers.join(",")];
 
     filtered.forEach((submission) => {
       const row = [
         `"${(submission.name || "").replace(/"/g, '""')}"`,
+        `"${(submission.phone || "").replace(/"/g, '""')}"`,
         submission.age || "",
         `"${(submission.profession || "").replace(/"/g, '""')}"`,
         `"${(submission.city || "").replace(/"/g, '""')}"`,
@@ -423,6 +420,7 @@ const Admin = () => {
       const eventData = {
         name: values.name,
         date: values.date,
+        end_date: values.end_date || null,
         time: values.time,
         description: values.description,
         location: values.location,
@@ -582,9 +580,7 @@ const Admin = () => {
         id: contactInfo?.id || undefined,
         email: values.email || null,
         phone: values.phone || null,
-        address: values.address || null,
         instagram_url: values.instagram_url || null,
-        linkedin_url: values.linkedin_url || null,
       });
       if (error) throw error;
       toast({ title: "Success", description: "Contact information updated successfully" });
@@ -691,7 +687,6 @@ const Admin = () => {
         work: values.work || null,
         motto: values.motto || null,
         image_url: imageUrl,
-        linkedin_url: values.linkedin_url || null,
         instagram_url: values.instagram_url || null,
         twitter_url: values.twitter_url || null,
         display_order: values.display_order,
@@ -1088,19 +1083,27 @@ const Admin = () => {
                         <div className="grid grid-cols-2 gap-4">
                           <FormField control={eventForm.control} name="date" render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Date</FormLabel>
+                              <FormLabel>Start Date</FormLabel>
                               <FormControl><Input type="date" {...field} /></FormControl>
                               <FormMessage />
                             </FormItem>
                           )} />
-                          <FormField control={eventForm.control} name="time" render={({ field }) => (
+                          <FormField control={eventForm.control} name="end_date" render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Time</FormLabel>
-                              <FormControl><Input placeholder="6:00 PM - 7:30 PM" {...field} /></FormControl>
+                              <FormLabel>End Date (optional)</FormLabel>
+                              <FormControl><Input type="date" {...field} /></FormControl>
+                              <FormDescription>For multi-day events</FormDescription>
                               <FormMessage />
                             </FormItem>
                           )} />
                         </div>
+                        <FormField control={eventForm.control} name="time" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Time</FormLabel>
+                            <FormControl><Input placeholder="6:00 PM - 7:30 PM" {...field} /></FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )} />
                         <FormField control={eventForm.control} name="location" render={({ field }) => (
                           <FormItem>
                             <FormLabel>Location</FormLabel>
@@ -1157,7 +1160,9 @@ const Admin = () => {
                         <div className="flex justify-between items-start">
                           <div>
                             <h3 className="font-bold text-lg">{event.name}</h3>
-                            <p className="text-sm text-muted-foreground">{event.date} • {event.time}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {event.date}{event.end_date && ` - ${event.end_date}`} • {event.time}
+                            </p>
                             <p className="text-sm">{event.location}</p>
                             {event.map_link && <p className="text-xs text-primary mt-1">Has map link</p>}
                           </div>
@@ -1679,13 +1684,6 @@ const Admin = () => {
                         <div className="border-t pt-4">
                           <h4 className="font-medium mb-3">Social Media Links</h4>
                           <div className="grid gap-4">
-                            <FormField control={founderForm.control} name="linkedin_url" render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>LinkedIn URL</FormLabel>
-                                <FormControl><Input placeholder="https://linkedin.com/in/..." {...field} /></FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )} />
                             <FormField control={founderForm.control} name="instagram_url" render={({ field }) => (
                               <FormItem>
                                 <FormLabel>Instagram URL</FormLabel>
@@ -2155,6 +2153,7 @@ const Admin = () => {
                       <thead>
                         <tr className="border-b border-border">
                           <th className="text-left p-3 font-semibold">Name</th>
+                          <th className="text-left p-3 font-semibold">Phone</th>
                           <th className="text-left p-3 font-semibold">Age</th>
                           <th className="text-left p-3 font-semibold">Profession</th>
                           <th className="text-left p-3 font-semibold">City</th>
@@ -2165,6 +2164,7 @@ const Admin = () => {
                         {contactSubmissions.map((submission) => (
                           <tr key={submission.id} className="border-b border-border hover:bg-muted/50">
                             <td className="p-3">{submission.name}</td>
+                            <td className="p-3">{submission.phone}</td>
                             <td className="p-3">{submission.age}</td>
                             <td className="p-3">{submission.profession}</td>
                             <td className="p-3">{submission.city}</td>

@@ -14,6 +14,10 @@ const contactFormSchema = z.object({
     .min(1, "Name is required")
     .max(100, "Name must be less than 100 characters")
     .trim(),
+  phone: z.string()
+    .min(1, "Phone number is required")
+    .max(20, "Phone number must be less than 20 characters")
+    .trim(),
   age: z.string()
     .min(1, "Age is required")
     .refine((val) => !isNaN(Number(val)) && Number(val) > 0 && Number(val) < 150, "Please enter a valid age"),
@@ -36,11 +40,12 @@ interface ContactInfo {
 const Contact = () => {
   const [formData, setFormData] = useState({
     name: "",
+    phone: "",
     age: "",
     profession: "",
     city: "",
   });
-  const [formErrors, setFormErrors] = useState<{ name?: string; age?: string; profession?: string; city?: string }>({});
+  const [formErrors, setFormErrors] = useState<{ name?: string; phone?: string; age?: string; profession?: string; city?: string }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [contactInfo, setContactInfo] = useState<ContactInfo>({
     email: "hello@listeningclub.com",
@@ -84,7 +89,7 @@ const Contact = () => {
     const result = contactFormSchema.safeParse(formData);
     
     if (!result.success) {
-      const errors: { name?: string; age?: string; profession?: string; city?: string } = {};
+      const errors: { name?: string; phone?: string; age?: string; profession?: string; city?: string } = {};
       result.error.errors.forEach((err) => {
         const field = err.path[0] as keyof typeof errors;
         errors[field] = err.message;
@@ -99,6 +104,7 @@ const Contact = () => {
       const { data, error } = await supabase.functions.invoke('submit-contact', {
         body: {
           name: result.data.name,
+          phone: result.data.phone,
           age: parseInt(result.data.age),
           profession: result.data.profession,
           city: result.data.city,
@@ -123,7 +129,7 @@ const Contact = () => {
         description: "Thank you for reaching out. We'll get back to you soon.",
       });
 
-      setFormData({ name: "", age: "", profession: "", city: "" });
+      setFormData({ name: "", phone: "", age: "", profession: "", city: "" });
     } catch (error: any) {
       console.error("Form submission error:", error);
       toast({
@@ -185,6 +191,25 @@ const Contact = () => {
                   />
                   {formErrors.name && (
                     <p className="text-destructive text-sm mt-1">{formErrors.name}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label htmlFor="phone" className="block text-sm font-medium mb-2">
+                    Phone Number
+                  </label>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    placeholder="Your phone number"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    className={`bg-secondary/50 ${formErrors.phone ? 'border-destructive' : ''}`}
+                    disabled={isSubmitting}
+                    maxLength={20}
+                  />
+                  {formErrors.phone && (
+                    <p className="text-destructive text-sm mt-1">{formErrors.phone}</p>
                   )}
                 </div>
 
